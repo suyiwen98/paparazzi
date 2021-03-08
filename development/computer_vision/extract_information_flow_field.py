@@ -72,7 +72,7 @@ def determine_optical_flow(prev_bgr, bgr, graphics= True):
     
     return points_old, points_new, flow_vectors;
 
-def estimate_linear_flow_field(points_old, flow_vectors, RANSAC=False, n_iterations=100, error_threshold=10.0):
+def estimate_linear_flow_field(points_old, flow_vectors, RANSAC=True, n_iterations=100, error_threshold=10.0):
     
     n_points = points_old.shape[0];
     sample_size = 3; # minimal sample size is 3
@@ -203,6 +203,7 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
     divergence_over_time = np.zeros([n_images, 1]);
     errors_over_time = np.zeros([n_images, 1]);
     elapsed_times = np.zeros([n_images,1]);
+    ttc_over_time = np.zeros([n_images,1]);
     FoE = np.asarray([0.0]*2);
     for im in np.arange(0, n_images, 1):
         
@@ -229,13 +230,18 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
             # TODO: assignment: extract the focus of expansion and divergence from the flow field:
             # ************************************************************************************
             # change the following five lines of code!
-            horizontal_motion = -pu[2]; # 0.0;
-            vertical_motion = -pv[2]; #0.0;
-            # theoretically correct, but numerically not so stable:
-            FoE[0] = -pu[2]/pu[0]; #0.0;
-            FoE[1] = -pv[2]/pv[1]; #0.0;
+            horizontal_motion = -pu[2];  #u=ax+c
+            vertical_motion = -pv[2];    #u=by+c
             divergence = (pu[0]+pv[1]) / 2.0; # 0.0;
             
+            small_threshold = 1E-5;
+            if(abs(pu[0]) > small_threshold):
+                 FoE[0] = pu[2] / pu[0]; 
+            if(abs(pv[1]) > small_threshold):
+                 FoE[1] = pv[2] / pv[1];    
+            if(abs(divergence) > small_threshold):
+                 time_to_contact = 1 / divergence;
+                    
             # book keeping:
             horizontal_motion_over_time[im] = horizontal_motion;
             vertical_motion_over_time[im] = vertical_motion;
@@ -243,6 +249,7 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
             FoE_over_time[im, 1] = FoE[1];
             divergence_over_time[im] = divergence;
             errors_over_time[im] = err;
+            ttc_over_time[im] = time_to_contact;
             
             if(verbose):
                 # print the FoE and divergence:
@@ -265,6 +272,7 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
         plt.plot(range(n_images), divergence_over_time, label='Divergence');
         plt.xlabel('Image')
         plt.ylabel('Divergence')
+
         
         plt.figure();
         plt.plot(range(n_images), FoE_over_time[:,0], label='FoE[0]');
@@ -283,11 +291,17 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
         plt.plot(range(n_images), horizontal_motion_over_time, label='Horizontal motion');
         plt.plot(range(n_images), vertical_motion_over_time, label='Vertical motion');
         plt.xlabel('Image')
-        plt.ylabel('Motion U/Z')        
+        plt.ylabel('Motion U/Z')    
+        
+        plt.figure();
+        plt.plot(range(n_images), ttc_over_time, label='Time-to-contact');
+        plt.xlabel('Image')
+        plt.ylabel('Time-to-contact')
+        plt.plot([0, 100], [100,0], '--k')
 
 if __name__ == '__main__':        
     
     # Change flow_gaphics to True in order to see images and optical flow:
     image_dir_name='./AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
-    extract_flow_information(image_dir_name, verbose=True, graphics = True, flow_graphics = True)
+    extract_flow_information(image_dir_name, verbose=True, graphics = True, flow_graphics = False)
     show_flow(70,80, image_dir_name)
