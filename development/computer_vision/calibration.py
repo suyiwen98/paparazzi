@@ -134,12 +134,12 @@ def undistort(image_name, mtx, dist):
     if k == 27:
         cv2.destroyAllWindows()
         
-    return
+    return dst1
 
-if __name__ == '__main__':
-    
-    ret, mtx, dist, rvecs, tvecs = calibrate()
-    image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121-163447/*.jpg"
-    filenames = glob.glob(image_dir_path)
-    filenames.sort()
-    undistort(filenames[40], mtx, dist)
+#if __name__ == '__main__':
+#    
+#    ret, mtx, dist, rvecs, tvecs = calibrate()
+#    image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121-163447/*.jpg"
+#    filenames = glob.glob(image_dir_path)
+#    filenames.sort()
+#    undistort(filenames[40], mtx, dist)
