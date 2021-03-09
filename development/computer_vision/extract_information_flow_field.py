@@ -8,14 +8,11 @@ Script that can be run on a directory, calculates optical flow and extracts usef
 @author: Guido de Croon, modified by Suyi Wen
 """
 
-import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import re
 import glob
 import time
-import sys
 
 def determine_optical_flow(prev_bgr, bgr, graphics= True):
     
@@ -303,5 +300,5 @@ if __name__ == '__main__':
     
     # Change flow_gaphics to True in order to see images and optical flow:
     image_dir_name='./AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
-    extract_flow_information(image_dir_name, verbose=True, graphics = True, flow_graphics = False)
+    extract_flow_information(image_dir_name, verbose=True, graphics = True, flow_graphics = True)
     show_flow(70,80, image_dir_name)
