@@ -18,8 +18,7 @@ import time
 def determine_optical_flow(prev_bgr, bgr, graphics= True):
     
     # *******************************************************************
-    # TODO: In the !second! lecture on optical flow, study this function
-    # and change the parameters below to investigate the trade-off between
+    # TODO: study this functionand change the parameters below to investigate the trade-off between
     # accuracy and computational efficiency
     # *******************************************************************
     
@@ -57,7 +56,7 @@ def determine_optical_flow(prev_bgr, bgr, graphics= True):
         #RGB color of optical flow arrow
         color = (1.0,1.0,1.0);
         #line thickness of 3 px
-        thickness = 3
+        thickness = 2
         for p in range(n_points):
             cv2.arrowedLine(im, tuple(points_old[p, :]), tuple(points_new[p,:]), color, thickness);
          
