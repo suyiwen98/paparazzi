@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import time
+#import calibration
 
 def determine_optical_flow(prev_bgr, bgr, graphics= True):
     
@@ -27,15 +28,15 @@ def determine_optical_flow(prev_bgr, bgr, graphics= True):
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY);
     
     # params for ShiTomasi corner detection
-    feature_params = dict( maxCorners = 100,
+    feature_params = dict( maxCorners   = 100,
                            qualityLevel = 0.3,
-                           minDistance = 7,
-                           blockSize = 7 )
+                           minDistance  = 7,
+                           blockSize    = 7 )
     
     # Parameters for lucas kanade optical flow
     lk_params = dict( winSize  = (15,15),
                       maxLevel = 2,
-                      criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+                      criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 15, 0.03))
     
     # detect features:
     points_old = cv2.goodFeaturesToTrack(prev_gray, mask = None, **feature_params);
@@ -164,6 +165,7 @@ def show_flow(image_nr_1, image_nr_2, image_dir_name):
     image_name_1 = image_names[image_nr_1]
     prev_bgr = cv2.imread(image_name_1);
     prev_bgr = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2RGB);
+    prev_bgr = cv2.rotate(prev_bgr, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
     
     plt.figure();
     plt.imshow(prev_bgr);
@@ -172,7 +174,7 @@ def show_flow(image_nr_1, image_nr_2, image_dir_name):
     image_name_2 = image_names[image_nr_2]
     bgr = cv2.imread(image_name_2);
     bgr = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB);
-    
+    bgr = cv2.rotate(bgr, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
     plt.figure();
     plt.imshow(bgr);
     plt.title('Second image, nr' + str(image_nr_2));
@@ -190,7 +192,8 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
 #    else:
 #        # Python 3:
 #        image_names.sort(key=get_number_file_name);
-    image_names=get_all_image_names(image_dir_name)     
+    image_names=get_all_image_names(image_dir_name)   
+    #ret, mtx, dist, rvecs, tvecs = calibrate()
     
     # iterate over the images:
     n_images = len(image_names);
@@ -205,10 +208,12 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
     for im in np.arange(0, n_images, 1):
         
         bgr = cv2.imread(image_names[im]);
-        
+        bgr = cv2.rotate(bgr, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE) 
+        #bgr = undistort(image_names[im], mtx, dist)
         if(im > 0):
             
             t_before = time.time()
+            
             # determine optical flow:
             points_old, points_new, flow_vectors = determine_optical_flow(prev_bgr, bgr, graphics=flow_graphics);
             # do stuff
@@ -224,9 +229,8 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
             pu, pv, err = estimate_linear_flow_field(points_old, flow_vectors);
             
             # ************************************************************************************
-            # TODO: assignment: extract the focus of expansion and divergence from the flow field:
+            # extract the focus of expansion and divergence from the flow field:
             # ************************************************************************************
-            # change the following five lines of code!
             horizontal_motion = -pu[2];  #u=ax+c
             vertical_motion = -pv[2];    #u=by+c
             divergence = (pu[0]+pv[1]) / 2.0; # 0.0;
@@ -258,13 +262,6 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
     print('*** average elapsed time = {} ***'.format(np.mean(elapsed_times[1:,0])));
     
     if(graphics):
-        
-        # ********************************************************************
-        # TODO:
-        # What is the unit of the divergence?
-        # Can you also draw the time-to-contact over time? In what unit is it?
-        # ********************************************************************
-        
         plt.figure();
         plt.plot(range(n_images), divergence_over_time, label='Divergence');
         plt.xlabel('Image')
@@ -294,7 +291,8 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
         plt.plot(range(n_images), ttc_over_time, label='Time-to-contact');
         plt.xlabel('Image')
         plt.ylabel('Time-to-contact')
-        plt.plot([0, 100], [100,0], '--k')
+       
+    
 
 if __name__ == '__main__':        
     
