@@ -12,7 +12,7 @@ latest/py_tutorials/py_calib3d/py_calibration/py_calibration.html
 import numpy as np
 import cv2
 import glob
-
+import matplotlib.pyplot as plt
 
 # Setup for Calibration
 # termination criteria
@@ -64,6 +64,8 @@ def calibrate(image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121
             corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
             imgpoints.append(corners2)
             
+#            plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+#            plt.show()
             # Draw and display the corners
             cv2.drawChessboardCorners(img, (width,height), corners2, ret)
             cv2.imshow('img', img)
@@ -75,6 +77,7 @@ def calibrate(image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121
     #     if k == 27:  
     #         cv2.destroyAllWindows() 
     cv2.destroyAllWindows()
+    cv2.waitKey(1)
     #Calculate the camera matrix, distortion coefficients, rotation and translation vectors etc
     #it looks for the number of corners and if writter wrongly it can't find the chessboard
     #check the ret value for that
@@ -100,16 +103,21 @@ def calibrate(image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121
     
     return [ret, mtx, dist, rvecs, tvecs]
     
-def undistort(image_name, mtx, dist):
+def undistort(image_name):
     """
-    It takes an image and undistort it. 
+    It takes an image, rotates and undistorts it. 
         image_name: full image path name;
         mtx       : camera matrix;
         dist      : distortion coefficients; 
     """
     
     img = cv2.imread(image_name)
+    img = cv2.rotate(img, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
     h,  w = img.shape[:2]
+    
+    #obtained from calibrate function
+    mtx= np.array([[8.47195566e+02, 0.00000000e+00, 1.97767800e+02],[0.00000000e+00, 2.51406294e+03, 1.13642556e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]) 
+    dist= np.array([[-2.89309111, 10.05495844,  0.05927995,  0.09262192,  0.92690401]])
     
     #refine the camera matrix based on a free scaling parameter
     #alpha=0, it returns undistorted image with minimum unwanted pixels. 
@@ -123,23 +131,36 @@ def undistort(image_name, mtx, dist):
     # crop the image
     x, y, w, h = roi
     dst1 = dst[y:y+h, x:x+w]
-    cv2.imwrite('calibresult.png', dst)
-    
-    # Check the Results
-    cv2.imshow('Distroted', img)
-    cv2.imshow('Undistorted', dst)
-    cv2.imshow('Undistroted & Cut', dst1)
-    
-    k = cv2.waitKey(0) & 0xFF
-    if k == 27:
-        cv2.destroyAllWindows()
+    cv2.imwrite('calibresult.png', dst1)
         
+#    # Check the Results
+#    cv2.imshow('Distroted', img)
+#    cv2.imshow('Undistorted', dst)
+#    cv2.imshow('Undistroted & Cut', dst1)    
+#    k = cv2.waitKey(0) & 0xFF
+#    if k == 27:
+#        cv2.destroyAllWindows()
+
+
+#    plt.figure()
+#    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+#    
+#    plt.figure()
+#    plt.imshow(cv2.cvtColor(dst, cv2.COLOR_BGR2RGB))
+#    
+#    plt.figure()
+#    plt.imshow(cv2.cvtColor(dst1, cv2.COLOR_BGR2RGB))
+#    
+#    plt.show()
+    
     return dst1
 
-#if __name__ == '__main__':
-#    
-#    ret, mtx, dist, rvecs, tvecs = calibrate()
-#    image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121-163447/*.jpg"
-#    filenames = glob.glob(image_dir_path)
-#    filenames.sort()
-#    undistort(filenames[40], mtx, dist)
+
+if __name__ == '__main__':
+    
+    #ret, mtx, dist, rvecs, tvecs = calibrate()
+    #return the following resullts
+    image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121-163447/*.jpg"
+    filenames = glob.glob(image_dir_path)
+    filenames.sort()
+    undistort(filenames[40])
