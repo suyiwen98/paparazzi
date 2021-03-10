@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import time
-#import calibration
+import calibration
 
 def determine_optical_flow(prev_bgr, bgr, graphics= True):
     
@@ -51,6 +51,7 @@ def determine_optical_flow(prev_bgr, bgr, graphics= True):
     
     if(graphics):
         im = (0.5 * prev_bgr.copy().astype(float) + 0.5 * bgr.copy().astype(float)) / 255.0;
+        im = cv2.cvtColor(np.float32(im), cv2.COLOR_BGR2RGB)
         n_points = len(points_old);
         
         #RGB color of optical flow arrow
@@ -206,9 +207,11 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
     FoE = np.asarray([0.0]*2);
     for im in np.arange(0, n_images, 1):
         
-        bgr = cv2.imread(image_names[im]);
-        bgr = cv2.rotate(bgr, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE) 
-        #bgr = undistort(image_names[im], mtx, dist)
+        #calibrates the image
+        bgr = calibration.undistort(image_names[im])
+        
+        #bgr = cv2.imread(image_names[im])
+
         if(im > 0):
             
             t_before = time.time()
