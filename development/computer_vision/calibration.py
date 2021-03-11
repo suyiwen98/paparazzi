@@ -141,16 +141,16 @@ def undistort(image_name):
 #        cv2.destroyAllWindows()
 
 
-    plt.figure()
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    
-    plt.figure()
-    plt.imshow(cv2.cvtColor(dst, cv2.COLOR_BGR2RGB))
-    
-    plt.figure()
-    plt.imshow(cv2.cvtColor(dst1, cv2.COLOR_BGR2RGB))
-    
-    plt.show()
+#    plt.figure()
+#    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+#    
+#    plt.figure()
+#    plt.imshow(cv2.cvtColor(dst, cv2.COLOR_BGR2RGB))
+#    
+#    plt.figure()
+#    plt.imshow(cv2.cvtColor(dst1, cv2.COLOR_BGR2RGB))
+#    
+#    plt.show()
     
     return dst1
 
