@@ -309,5 +309,5 @@ if __name__ == '__main__':
     
     # Change flow_gaphics to True in order to see images and optical flow:
     image_dir_path='./AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
-    #extract_flow_information(image_dir_path, verbose=True, graphics = True, flow_graphics = True)
+    extract_flow_information(image_dir_path, verbose=True, graphics = True, flow_graphics = True)
     show_flow(70,80, image_dir_path)
