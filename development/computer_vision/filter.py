@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt;
 #get numpy
 import numpy as np;
 import glob
-
+import calibration
 
 def filter_color(image_name, y_low, y_high, u_low, u_high, v_low, v_high, resize_factor):
-    im = cv2.imread(image_name);
+    im = calibration.undistort(image_name);
     # cv2.resize(src, dsize[, dst[, fx[, fy[, interpolation]]]])
     # src: source, original or input image
     # dsize: desired size for the output image
     # fx: scale factor along the horizontal axis
-    im = cv2.rotate(im, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
+
     im = cv2.resize(im, (int(im.shape[1] / resize_factor), int(im.shape[0] / resize_factor)));
     # convert an image from RBG space to YUV.
     YUV = cv2.cvtColor(im, cv2.COLOR_BGR2YUV);
