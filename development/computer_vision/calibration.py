@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
 
-def calibrate(image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121-163447/*.jpg", square_size=0.03515, width=9, height=6):
+def calibrate(image_dir_path="Test_samples/calibration/*.jpg", square_size=0.03515, width=9, height=6):
     """ Apply camera calibration operation for images in the given directory path.
     parameters: 
         image_dir_name: directory where we get the images. Default is 
@@ -77,7 +77,7 @@ def calibrate(image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121
     #     if k == 27:  
     #         cv2.destroyAllWindows() 
     cv2.destroyAllWindows()
-    cv2.waitKey(1)
+
     #Calculate the camera matrix, distortion coefficients, rotation and translation vectors etc
     #it looks for the number of corners and if writter wrongly it can't find the chessboard
     #check the ret value for that
@@ -115,10 +115,9 @@ def undistort(image_name):
     img = cv2.rotate(img, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
     h,  w = img.shape[:2]
     
-    #obtained from calibrate function
-    mtx= np.array([[8.47195566e+02, 0.00000000e+00, 1.97767800e+02],[0.00000000e+00, 2.51406294e+03, 1.13642556e+02],[0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]) 
-    dist= np.array([[-2.89309111, 10.05495844,  0.05927995,  0.09262192,  0.92690401]])
-    
+#    #obtained from calibrate function
+    mtx= np.array([[591.61764944,   0.        , 289.50777998],[  0.        , 457.40638408, 118.52519197],[  0.        ,   0.        ,   1.        ]])
+    dist= np.array([[ 1.29416909e+00, -1.66224282e+01,  4.74721714e-03,-1.45135765e-02,  4.51988446e+01]])
     #refine the camera matrix based on a free scaling parameter
     #alpha=0, it returns undistorted image with minimum unwanted pixels. 
     #alpha=1, all pixels are retained with some extra black images. 
@@ -163,4 +162,4 @@ if __name__ == '__main__':
     image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121-163447/*.jpg"
     filenames = glob.glob(image_dir_path)
     filenames.sort()
-    undistort(filenames[40])
+    undistort(filenames[320])
