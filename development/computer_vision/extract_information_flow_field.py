@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import glob
 import time
 import calibration
+import traceback
 
 def determine_optical_flow(prev_bgr, bgr, graphics= True):
     
@@ -39,6 +40,14 @@ def determine_optical_flow(prev_bgr, bgr, graphics= True):
     
     # detect features:
     points_old = cv2.goodFeaturesToTrack(prev_gray, mask = None, **feature_params);
+    
+    # Initiate FAST object with default values
+    fast = cv2.FastFeatureDetector_create()
+    
+    # find and draw the keypoints
+    kp = fast.detect(gray, None);
+    points_old = cv2.KeyPoint_convert(kp)
+    points_old = points_old.reshape((points_old.shape[0], 1, 2))
     
     # calculate optical flow
     points_new, status, error_match = cv2.calcOpticalFlowPyrLK(prev_gray, gray, points_old, None, **lk_params)
@@ -148,14 +157,14 @@ def estimate_linear_flow_field(points_old, flow_vectors, RANSAC=True, n_iteratio
         
     return pu, pv, err;
 
-def get_all_image_names(image_dir_name):
+def get_all_image_names(image_dir_path):
     """
     returns a sorted list of all image names;
     input: <image_dir_name> is the folder path, 
     for example, './AE4317_2019_datasets/calibration_frontcam/20190121-163447/*.jpg'
     """
     image_names = [];
-    image_names =  glob.glob(image_dir_name);
+    image_names =  glob.glob(image_dir_path);
     image_names.sort()
     return image_names
     
@@ -164,19 +173,19 @@ def show_flow(image_nr_1, image_nr_2, image_dir_name):
     image_names=get_all_image_names(image_dir_name)
     image_name_1 = image_names[image_nr_1]
     prev_bgr = cv2.imread(image_name_1);
-    prev_bgr = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2RGB);
     prev_bgr = cv2.rotate(prev_bgr, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
+    prev_rgb = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2RGB);
     
     plt.figure();
-    plt.imshow(prev_bgr);
+    plt.imshow(prev_rgb);
     plt.title('First image, nr' + str(image_nr_1));
     
     image_name_2 = image_names[image_nr_2]
     bgr = cv2.imread(image_name_2);
-    bgr = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB);
     bgr = cv2.rotate(bgr, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB);
     plt.figure();
-    plt.imshow(bgr);
+    plt.imshow(rgb);
     plt.title('Second image, nr' + str(image_nr_2));
     
     # print('name1: {}\nname2: {}'.format(image_name_1, image_name_2));
@@ -184,7 +193,7 @@ def show_flow(image_nr_1, image_nr_2, image_dir_name):
     return points_old, points_new, flow_vectors;
     
 
-def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow_graphics = False):
+def extract_flow_information(image_dir_path, verbose=True, graphics = True, flow_graphics = False):
     
 #    if sys.version_info[0] < 3:
 #        # Python 2:
@@ -192,7 +201,7 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
 #    else:
 #        # Python 3:
 #        image_names.sort(key=get_number_file_name);
-    image_names=get_all_image_names(image_dir_name)   
+    image_names=get_all_image_names(image_dir_path)   
     #ret, mtx, dist, rvecs, tvecs = calibrate()
     
     # iterate over the images:
@@ -257,7 +266,7 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
             if(verbose):
                 # print the FoE and divergence:
                 print('error = {}, FoE = {}, {}, and divergence = {}'.format(err, FoE[0], FoE[1], divergence));
-        
+            
         # the current image becomes the previous image:
         prev_bgr = bgr;
     
@@ -299,6 +308,6 @@ def extract_flow_information(image_dir_name, verbose=True, graphics = True, flow
 if __name__ == '__main__':        
     
     # Change flow_gaphics to True in order to see images and optical flow:
-    image_dir_name='./AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
-    extract_flow_information(image_dir_name, verbose=True, graphics = True, flow_graphics = True)
-    show_flow(70,80, image_dir_name)
+    image_dir_path='./AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
+    #extract_flow_information(image_dir_path, verbose=True, graphics = True, flow_graphics = True)
+    show_flow(70,80, image_dir_path)
