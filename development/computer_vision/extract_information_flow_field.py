@@ -41,16 +41,20 @@ def determine_optical_flow(prev_bgr, bgr, graphics= True):
     # detect features:
     points_old = cv2.goodFeaturesToTrack(prev_gray, mask = None, **feature_params);
     
-    # Initiate FAST object with default values
-    fast = cv2.FastFeatureDetector_create()
+    # Initiate FAST object with a threshold of 5
+    fast = cv2.FastFeatureDetector_create(5)
+
     
     # find and draw the keypoints
     kp = fast.detect(gray, None);
     points_old = cv2.KeyPoint_convert(kp)
+    print(points_old)
     points_old = points_old.reshape((points_old.shape[0], 1, 2))
+    print(points_old)
     
     # calculate optical flow
     points_new, status, error_match = cv2.calcOpticalFlowPyrLK(prev_gray, gray, points_old, None, **lk_params)
+    
     
     # filter the points by their status:
     points_old = points_old[status == 1];
@@ -214,14 +218,16 @@ def extract_flow_information(image_dir_path, verbose=True, graphics = True, flow
     elapsed_times = np.zeros([n_images,1]);
     ttc_over_time = np.zeros([n_images,1]);
     FoE = np.asarray([0.0]*2);
-    for im in np.arange(0, n_images, 1):
+    #starting from the 300th image from the dataset
+    start = 300
+    for im in np.arange(start, n_images, 1):
         
         #calibrates the image
         bgr = calibration.undistort(image_names[im])
         
         #bgr = cv2.imread(image_names[im])
 
-        if(im > 0):
+        if(im > start):
             
             t_before = time.time()
             
