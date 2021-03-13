@@ -13,6 +13,7 @@ import numpy as np
 import cv2
 import glob
 import matplotlib.pyplot as plt
+import os
 
 # Setup for Calibration
 # termination criteria
@@ -105,14 +106,21 @@ def calibrate(image_dir_path="Test_samples/calibration/*.jpg", square_size=0.035
     
 def undistort(image_name):
     """
-    It takes an image, rotates and undistorts it. 
+    It takes an image, rotates and undistorts it. Returns the distortion matrix and image ID
+    Inputs
         image_name: full image path name;
         mtx       : camera matrix;
         dist      : distortion coefficients; 
     """
-    
+    #reads the image
     img = cv2.imread(image_name)
+    
+    #obtain the name of the image
+    name = os.path.split(image_name)[-1]
+    name=os.path.splitext(name)[0]
+    #rotates the image
     img = cv2.rotate(img, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
+    #get height and width of the image
     h,  w = img.shape[:2]
     
 #    #obtained from calibrate function
@@ -130,7 +138,7 @@ def undistort(image_name):
     # crop the image
     x, y, w, h = roi
     dst1 = dst[y:y+h, x:x+w]
-    cv2.imwrite('calibresult.png', dst1)
+    #cv2.imwrite('calibresult.png', dst1)
         
 #    # Check the Results
 #    cv2.imshow('Distroted', img)
@@ -152,7 +160,7 @@ def undistort(image_name):
 #    
 #    plt.show()
     
-    return dst1
+    return dst1,name
 
 
 if __name__ == '__main__':
