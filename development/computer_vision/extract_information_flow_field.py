@@ -14,9 +14,8 @@ import matplotlib.pyplot as plt
 import glob
 import time
 import calibration
-import traceback
 
-def determine_optical_flow(prev_bgr, bgr, graphics= True):
+def determine_optical_flow(prev_bgr, bgr, prev_bgr_name, bgr_name, graphics= True):
     
     # *******************************************************************
     # TODO: study this functionand change the parameters below to investigate the trade-off between
@@ -27,11 +26,12 @@ def determine_optical_flow(prev_bgr, bgr, graphics= True):
     prev_gray = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2GRAY);
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY);
     
+
     # params for ShiTomasi corner detection
-    feature_params = dict( maxCorners   = 100,
-                           qualityLevel = 0.3,
-                           minDistance  = 7,
-                           blockSize    = 7 )
+#    feature_params = dict( maxCorners   = 100,
+#                           qualityLevel = 0.3,
+#                           minDistance  = 7,
+#                           blockSize    = 7 )
     
     # Parameters for lucas kanade optical flow
     lk_params = dict( winSize  = (15,15),
@@ -39,18 +39,17 @@ def determine_optical_flow(prev_bgr, bgr, graphics= True):
                       criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 15, 0.03))
     
     # detect features:
-    points_old = cv2.goodFeaturesToTrack(prev_gray, mask = None, **feature_params);
+    #points_old = cv2.goodFeaturesToTrack(prev_gray, mask = None, **feature_params);
     
     # Initiate FAST object with a threshold of 5
     fast = cv2.FastFeatureDetector_create(5)
 
-    
     # find and draw the keypoints
     kp = fast.detect(gray, None);
     points_old = cv2.KeyPoint_convert(kp)
-    print(points_old)
+
     points_old = points_old.reshape((points_old.shape[0], 1, 2))
-    print(points_old)
+    #print(points_old)
     
     # calculate optical flow
     points_new, status, error_match = cv2.calcOpticalFlowPyrLK(prev_gray, gray, points_old, None, **lk_params)
@@ -76,7 +75,7 @@ def determine_optical_flow(prev_bgr, bgr, graphics= True):
          
         plt.figure();
         plt.imshow(im);
-        plt.title('Optical flow');
+        plt.title('Optical flow from image '+prev_bgr_name+' to '+bgr_name);
         #cv2.imshow('Flow', im);
         #cv2.waitKey(100);
         #cv2.destroyAllWindows()
@@ -92,9 +91,6 @@ def estimate_linear_flow_field(points_old, flow_vectors, RANSAC=True, n_iteratio
         
         if(not RANSAC):
             
-            # *****************************************
-            # TODO: investigate this estimation method:
-            # *****************************************
             
             # estimate a linear flow field for horizontal and vertical flow separately:
             # make a big matrix A with elements [x,y,1]
@@ -104,7 +100,7 @@ def estimate_linear_flow_field(points_old, flow_vectors, RANSAC=True, n_iteratio
             # https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse
             pseudo_inverse_A = np.linalg.pinv(A);
             
-            # target = horizontal flow:
+            # target = horizontal flow translational component:
             u_vector = flow_vectors[:,0];
             # solve the linear system:
             pu = np.dot(pseudo_inverse_A, u_vector);
@@ -182,7 +178,7 @@ def show_flow(image_nr_1, image_nr_2, image_dir_name):
     
     plt.figure();
     plt.imshow(prev_rgb);
-    plt.title('First image, nr' + str(image_nr_1));
+    plt.title('First image, nr ' + str(image_nr_1));
     
     image_name_2 = image_names[image_nr_2]
     bgr = cv2.imread(image_name_2);
@@ -193,7 +189,7 @@ def show_flow(image_nr_1, image_nr_2, image_dir_name):
     plt.title('Second image, nr' + str(image_nr_2));
     
     # print('name1: {}\nname2: {}'.format(image_name_1, image_name_2));
-    points_old, points_new, flow_vectors = determine_optical_flow(prev_bgr, bgr, graphics=True);
+    points_old, points_new, flow_vectors = determine_optical_flow(prev_bgr, bgr,str(image_nr_1), str(image_nr_2), graphics=True);
     return points_old, points_new, flow_vectors;
     
 
@@ -206,8 +202,8 @@ def extract_flow_information(image_dir_path, verbose=True, graphics = True, flow
 #        # Python 3:
 #        image_names.sort(key=get_number_file_name);
     image_names=get_all_image_names(image_dir_path)   
-    #ret, mtx, dist, rvecs, tvecs = calibrate()
     
+        
     # iterate over the images:
     n_images = len(image_names);
     FoE_over_time = np.zeros([n_images, 2]);
@@ -218,21 +214,23 @@ def extract_flow_information(image_dir_path, verbose=True, graphics = True, flow
     elapsed_times = np.zeros([n_images,1]);
     ttc_over_time = np.zeros([n_images,1]);
     FoE = np.asarray([0.0]*2);
+
     #starting from the 300th image from the dataset
     start = 300
     for im in np.arange(start, n_images, 1):
         
-        #calibrates the image
-        bgr = calibration.undistort(image_names[im])
-        
+        #calibrates and rotates the image
+        bgr,bgr_name = calibration.undistort(image_names[im])
+        #line_thickness = 2
+        #cv2.line(bgr, (0, 100), (450, 100), (0, 255, 0), thickness=line_thickness)
         #bgr = cv2.imread(image_names[im])
 
         if(im > start):
             
             t_before = time.time()
-            
+                       
             # determine optical flow:
-            points_old, points_new, flow_vectors = determine_optical_flow(prev_bgr, bgr, graphics=flow_graphics);
+            points_old, points_new, flow_vectors = determine_optical_flow(prev_bgr, bgr, prev_bgr_name, bgr_name, graphics=flow_graphics);
             # do stuff
             elapsed = time.time() - t_before;
             if(verbose):
@@ -275,6 +273,7 @@ def extract_flow_information(image_dir_path, verbose=True, graphics = True, flow
             
         # the current image becomes the previous image:
         prev_bgr = bgr;
+        prev_bgr_name = bgr_name
     
     print('*** average elapsed time = {} ***'.format(np.mean(elapsed_times[1:,0])));
     
@@ -314,6 +313,6 @@ def extract_flow_information(image_dir_path, verbose=True, graphics = True, flow
 if __name__ == '__main__':        
     
     # Change flow_gaphics to True in order to see images and optical flow:
-    image_dir_path='./AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
+    image_dir_path='./AE4317_2019_datasets/cyberzoo_poles_panels_mats/20190121-142935/*.jpg'
     extract_flow_information(image_dir_path, verbose=True, graphics = True, flow_graphics = True)
-    show_flow(70,80, image_dir_path)
+    show_flow(70,71, image_dir_path)
