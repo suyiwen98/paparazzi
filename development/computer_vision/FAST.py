@@ -14,7 +14,9 @@ import calibration
 image_dir_path='./AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
 filenames = glob.glob(image_dir_path)
 filenames.sort()
-img = calibration.undistort(filenames[70])
+img,name = calibration.undistort(filenames[70])
+line_thickness = 2
+cv2.line(img, (0, 100), (450, 100), (0, 255, 0), thickness=line_thickness)
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY);
 
 # Initiate FAST object with default values
@@ -31,4 +33,3 @@ plt.figure()
 plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 plt.figure()
 plt.imshow(cv2.cvtColor(img2, cv2.COLOR_BGR2RGB))
-plt.show()
