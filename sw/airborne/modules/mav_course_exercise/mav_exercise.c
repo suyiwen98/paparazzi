@@ -33,23 +33,26 @@
 uint8_t increase_nav_heading(float incrementDegrees);
 uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters);
 uint8_t moveWaypoint(uint8_t waypoint, struct EnuCoor_i *new_coor);
+uint8_t turnTowardsGrass(void);
 
 enum navigation_state_t {
   SAFE,
   OBSTACLE_FOUND,
+  TURN,
   OUT_OF_BOUNDS,
   HOLD
 };
 
 // define and initialise global variables
-float oa_color_count_frac = 0.18f;
+float oa_color_count_frac = 0.10f;
 enum navigation_state_t navigation_state = SAFE;
 int32_t color_count = 0;               // orange color count from color filter for obstacle detection
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
 float moveDistance = 2;                 // waypoint displacement [m]
 float oob_haeding_increment = 5.f;      // heading angle increment if out of bounds [deg]
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
-
+float heading_increment = 10.f;
+int16_t turn_dir = 0;
 
 // needed to receive output from a separate module running on a parallel process
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
@@ -60,8 +63,9 @@ static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
                                int16_t __attribute__((unused)) pixel_width,
                                int16_t __attribute__((unused)) pixel_height,
-                               int32_t quality, int16_t __attribute__((unused)) extra) {
+                               int32_t quality, int16_t extra) {
   color_count = quality;
+  turn_dir = extra;
 }
 
 void mav_exercise_init(void) {
@@ -79,10 +83,10 @@ void mav_exercise_periodic(void) {
   // front_camera defined in airframe xml, with the video_capture module
   int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
 
-  PRINT("Color_count: %d  threshold: %d state: %d \n", color_count, color_count_threshold, navigation_state);
+  PRINT("Color_count: %d  threshold: %d state: %d turn: %d\n", color_count, color_count_threshold, navigation_state, turn_dir);
 
   // update our safe confidence using color threshold
-  if (color_count < color_count_threshold) {
+  if (turn_dir == 0) {
     obstacle_free_confidence++;
   } else {
     obstacle_free_confidence -= 2;  // be more cautious with positive obstacle detections
@@ -108,8 +112,17 @@ void mav_exercise_periodic(void) {
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      navigation_state = HOLD;
+
+      turnTowardsGrass();
+
+      navigation_state = TURN;
       break;
+    case TURN:
+    	increase_nav_heading(heading_increment);
+        if (obstacle_free_confidence >= 2){
+          navigation_state = SAFE;
+        }
+    	break;
     case OUT_OF_BOUNDS:
       // stop
       waypoint_move_here_2d(WP_GOAL);
@@ -122,9 +135,11 @@ void mav_exercise_periodic(void) {
         // add offset to head back into arena
         increase_nav_heading(oob_haeding_increment);
         navigation_state = SAFE;
+        if(rand() % 10 == 0){
+        oob_haeding_increment = oob_haeding_increment * -1;
+        }
       }
       break;
-    case HOLD:
     default:
       break;
   }
@@ -173,4 +188,20 @@ uint8_t moveWaypointForward(uint8_t waypoint, float distanceMeters) {
   calculateForwards(&new_coor, distanceMeters);
   moveWaypoint(waypoint, &new_coor);
   return false;
+}
+
+
+uint8_t turnTowardsGrass(void)
+{
+	if(turn_dir < 0){
+		if(heading_increment > 0){
+			heading_increment = heading_increment * -1;
+		}
+	}
+	else if(turn_dir > 0){
+		if(heading_increment < 0){
+			heading_increment = heading_increment * -1;
+		}
+	}
+	return false;
 }
