@@ -1,12 +1,11 @@
-#get opencv library
+#import libraries
 import cv2;
-#get matplotlib for plotting graphs
-import matplotlib.pyplot as plt;
-#get numpy
 import numpy as np;
 import glob
-import calibration
 import random as rng
+import matplotlib.pyplot as plt
+#import calibration library
+import calibration
 
 
 def grid_3x3(img):
@@ -26,7 +25,7 @@ def thresh_callback(val):
     # Detect edges using Canny
     canny_output = cv2.Canny(cnt_gray, threshold, threshold * 2)
     # Find contours
-    contours, hierarchy = cv2.findContours(canny_output, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    _,contours, hierarchy = cv2.findContours(canny_output, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     # Draw contours
     drawing = np.zeros((canny_output.shape[0], canny_output.shape[1], 3), dtype=np.uint8)
     for i in range(len(contours)):
@@ -79,10 +78,10 @@ def filter_color(image_name, y_low, y_high, u_low, u_high, v_low, v_high, resize
 
 if __name__ == '__main__':
     # Load images
-    # image_dir_path='./AE4317_2019_datasets/cyberzoo_poles_panels_mats/20190121-142935/*.jpg'
-    image_dir_path = './custom_set/*.jpg'
+    image_dir_path='./AE4317_2019_datasets/cyberzoo_poles_panels_mats/20190121-142935/*.jpg'
+    #image_dir_path = './custom_set/*.jpg'
     filenames = glob.glob(image_dir_path)
-    filenames.sort()
+    filenames.sort(key=lambda f: int(re.sub('\D', '', f)))
     initialization_flag = 0
     # Read Images
     for img_file in filenames:
