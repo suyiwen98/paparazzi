@@ -12,9 +12,8 @@ latest/py_tutorials/py_calib3d/py_calibration/py_calibration.html
 import numpy as np
 import cv2
 import glob
-import matplotlib.pyplot as plt
 import os
-
+import re
 # Setup for Calibration
 # termination criteria
 # *****************************************************************
@@ -115,9 +114,6 @@ def undistort(image_name):
     #reads the image
     img = cv2.imread(image_name)
     
-    #obtain the name of the image
-    name = os.path.split(image_name)[-1]
-    name=os.path.splitext(name)[0]
     #rotates the image
     img = cv2.rotate(img, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
     #get height and width of the image
@@ -160,7 +156,7 @@ def undistort(image_name):
 #    
 #    plt.show()
     
-    return dst1,name
+    return dst1
 
 
 if __name__ == '__main__':
@@ -169,5 +165,5 @@ if __name__ == '__main__':
     #return the following resullts
     image_dir_path="AE4317_2019_datasets/calibration_frontcam/20190121-163447/*.jpg"
     filenames = glob.glob(image_dir_path)
-    filenames.sort()
+    filenames.sort(key=lambda f: int(re.sub('\D', '', f)))
     undistort(filenames[320])
