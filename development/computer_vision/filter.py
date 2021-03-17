@@ -25,15 +25,15 @@ def filter_color(image_name, y_low, y_high, u_low, u_high, v_low, v_high, resize
                     YUV[y, x, 2] >= v_low and YUV[y, x, 2] <= v_high):
                 Filtered[y, x] = 1;
 
-    plt.figure();
-    RGB = cv2.cvtColor(im, cv2.COLOR_BGR2RGB);
-    plt.imshow(RGB);
-    plt.title('Original image');
-
-    plt.figure()
-    plt.imshow(Filtered);
-    plt.title('Filtered image');
-    plt.show()
+#    plt.figure();
+#    RGB = cv2.cvtColor(im, cv2.COLOR_BGR2RGB);
+#    plt.imshow(RGB);
+#    plt.title('Original image');
+#
+#    plt.figure()
+#    plt.imshow(Filtered);
+#    plt.title('Filtered image');
+#    plt.show()
     return Filtered
 
 if __name__ == '__main__':
