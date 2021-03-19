@@ -158,8 +158,8 @@ if __name__ == '__main__':
     filenames = glob.glob(image_dir_path)
     filenames.sort(key=lambda f: int(re.sub('\D', '', f)))
     
-    start=300
-    end=305
+    start=310
+    end=315
     
     for im in filenames[start:end]:
         img=calibration.undistort(im)
