@@ -27,7 +27,7 @@ def extract_features(img,gray,boundRect):
     Input: 
         img: callibrated image
         gray: gray scale filtered image
-        boundRect: parameters of a rectangle (x of top left corner,
+        boundRect: parameters of rectangle of frontal pole (x of top left corner,
         y of the same corner, width, height)"""
 #    white = [255, 255, 255]
 #    y,x=np.where(np.all(img_filtered==white,axis=2))
@@ -78,7 +78,7 @@ def extract_features(img,gray,boundRect):
     mask = mask.astype(np.uint8) 
     (x,y,w,h) = boundRect
     
-    if x>0 and y>0:
+    if gray.shape[0]>x>0 and gray.shape[1]>y>0:
         # Set the selected region within the mask to white (add 10 pixels to height and width)
         mask[y-10:y+h+10, x-10:x+w+10] = 255
     else:
@@ -207,7 +207,7 @@ def determine_optical_flow(prev_bgr, bgr,prev_bgr_time,bgr_time, graphics= True)
         
     # Pole Detector
     Filtered = filter_color(prev_bgr, y_low = 50, y_high = 250, u_low = 0, u_high = 150, 
-                                v_low = 150, v_high = 220);
+                                v_low = 140, v_high = 220);
     
     # Reduce noise on detected pole
     Filtered = np.uint8(Filtered)
@@ -350,33 +350,7 @@ def get_all_image_names(image_dir_path):
         times.append(time)
         
     return image_names,times
-    
-def show_flow(image_nr_1, image_nr_2, image_dir_name):
-    
-    image_names,times=get_all_image_names(image_dir_name)
-    image_name_1 = image_names[image_nr_1]
-    prev_bgr_time=times[image_nr_1]
-    prev_bgr = cv2.imread(image_name_1);
-    prev_bgr = cv2.rotate(prev_bgr, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
-    prev_rgb = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2RGB);
-    
-    plt.figure();
-    plt.imshow(prev_rgb);
-    plt.title('First image, nr ' + str(image_nr_1));
-    
-    image_name_2 = image_names[image_nr_2]
-    bgr_time=times[image_nr_1]
-    bgr = cv2.imread(image_name_2);
-    bgr = cv2.rotate(bgr, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
-    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB);
-    plt.figure();
-    plt.imshow(rgb);
-    plt.title('Second image, nr' + str(image_nr_2));
-    
-    points_old, points_new, flow_vectors = determine_optical_flow(prev_bgr, bgr, prev_bgr_time,bgr_time, graphics=True);
-    return points_old, points_new, flow_vectors;
-    
-
+        
 def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, flow_graphics = False):
     
     image_names,times=get_all_image_names(image_dir_path)   
@@ -409,8 +383,8 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
     FoE = np.asarray([0.0]*2);
 
     #starting from the 300th image from the dataset
-    start = 300
-    end   = 305 #max is n_images
+    start = 310
+    end   = 315 #max is n_images
     
     for im in np.arange(start, end, 1):
     
@@ -476,10 +450,11 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
                 plt.figure();
                 plt.imshow(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB));
                 plt.title('Error at '+str(prev_bgr_time) +"s ");
+                
         # the current image becomes the previous image:
         prev_bgr = bgr;
         prev_bgr_time=bgr_time
-        
+    
     print('*** average elapsed time = {} ***'.format(np.mean(elapsed_times[1:,0])));
     
     if(graphics):
@@ -514,7 +489,7 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
         plt.xlabel('Image')
         plt.ylabel('Time-to-contact')
        
-    
+    return ttc_over_time
 
 if __name__ == '__main__':        
     
@@ -524,5 +499,3 @@ if __name__ == '__main__':
     df=pd.read_csv(r'./AE4317_2019_datasets/cyberzoo_poles_panels_mats/20190121-142943.csv')
     #extract info from optical flow
     extract_flow_information(image_dir_path, df, verbose=True, graphics = True, flow_graphics = True)
-    #show optical flow using a sequence of two images
-    show_flow(70,71, image_dir_path)
