@@ -127,11 +127,11 @@ def extract_features(img,gray,boundRect):
     mask = mask.astype(np.uint8) 
     (x,y,w,h) = boundRect
     
-    if x>0 and y>0:
+    if x-10>0 and y-10>0 and gray.shape[0]>x+w+15 and gray.shape[1]>y+h+10:
         # Set the selected region within the mask to white (add 10 pixels to height and width)
-        mask[y-10:y+h+10, x-10:x+w+10] = 255
+        mask[y-15:y+h+15, x-10:x+w+10] = 255
     else:
-        mask[y:y+h+10, x-10:x+w+10] = 255
+        mask[y:y+h+10, x:x+w+10] = 255
 
     plt.figure()
     plt.imshow(mask)
@@ -158,8 +158,8 @@ if __name__ == '__main__':
     filenames = glob.glob(image_dir_path)
     filenames.sort(key=lambda f: int(re.sub('\D', '', f)))
     
-    start=310
-    end=315
+    start=300
+    end=305
     
     for im in filenames[start:end]:
         img=calibration.undistort(im)
