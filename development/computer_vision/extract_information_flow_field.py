@@ -78,12 +78,12 @@ def extract_features(img,gray,boundRect):
     mask = mask.astype(np.uint8) 
     (x,y,w,h) = boundRect
     
-    if gray.shape[0]>x>0 and gray.shape[1]>y>0:
+    if x-10>0 and y-10>0 and gray.shape[0]>x+w+15 and gray.shape[1]>y+h+15:
         # Set the selected region within the mask to white (add 10 pixels to height and width)
-        mask[y-10:y+h+10, x-10:x+w+10] = 255
+        mask[y-15:y+h+15, x-10:x+w+10] = 255
     else:
-        mask[y:y+h+10, x-10:x+w+10] = 255
-
+        mask[y:min(gray.shape[0],y+h+10), x:min(gray.shape[1],x+w+10)] = 255
+ 
     plt.figure()
     plt.imshow(mask)
     plt.title('Mask')
@@ -383,8 +383,8 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
     FoE = np.asarray([0.0]*2);
 
     #starting from the 300th image from the dataset
-    start = 310
-    end   = 315 #max is n_images
+    start = 300
+    end   = 305 #max is n_images
     
     for im in np.arange(start, end, 1):
     
@@ -424,7 +424,7 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
                 # ************************************************************************************
                 horizontal_motion = -pu[2];  #u=ax+c
                 vertical_motion = -pv[2];    #v=by+c
-                divergence = (pu[0]+pv[1]) / 2.0; # 0.0;
+                divergence = abs((pu[0]+pv[1]) / 2.0); # 0.0;
                 
                 small_threshold = 1E-5;
                 if(abs(pu[0]) > small_threshold):
@@ -445,8 +445,9 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
                 
                 if(verbose):
                     # print the FoE and divergence:
-                    print('error = {}, FoE = {}, {}, and divergence = {}'.format(err, FoE[0], FoE[1], divergence));
+                    print('error = {}, FoE = {}, {}, Time to Contact ={}, and Divergence = {}'.format(err, FoE[0], FoE[1], time_to_contact, divergence));
             except:
+                print("Error Occurred")
                 plt.figure();
                 plt.imshow(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB));
                 plt.title('Error at '+str(prev_bgr_time) +"s ");
