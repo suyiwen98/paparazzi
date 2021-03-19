@@ -15,7 +15,7 @@ import re
 import random as rng
 
 # https://docs.opencv.org/3.4/df/d0d/tutorial_find_contours.html
-def thresh_callback(gray,val):
+def close_contour(gray,val):
     threshold = val
     # Detect edges using Canny
     canny_output = cv2.Canny(gray, threshold, threshold * 2)
@@ -27,17 +27,22 @@ def thresh_callback(gray,val):
     drawing = np.zeros((canny_output.shape[0], canny_output.shape[1], 3), dtype=np.uint8)
     
     boundRect = [None]*len(contours)
-    
+    h= [None]*len(contours)
     for i in range(len(contours)):
         # approximate the contour
         peri = cv2.arcLength(contours[i], True)
         approx = cv2.approxPolyDP(contours[i], 0.01 * peri, True)
         boundRect[i] = cv2.boundingRect(approx)  #(x,y,w,h)
+        h[i]    =boundRect[i][3]
+        #random color for each contour
         color = (rng.randint(0,256), rng.randint(0,256), rng.randint(0,256))
+#        c = max(contours, key = cv2.contourArea)
+#        boundRect[i]= cv2.boundingRect(c)
         cv2.rectangle(drawing, (int(boundRect[i][0]), int(boundRect[i][1])), \
           (int(boundRect[i][0]+boundRect[i][2]), int(boundRect[i][1]+boundRect[i][3])), color, 2)
         cv2.drawContours(drawing, contours, i, color, 2, cv2.LINE_8, hierarchy, 0)
-        
+
+    c=contours[np.argmax(h)]
     # Change contour colors to Blue
     drawing = cv2.cvtColor(drawing, cv2.COLOR_BGR2GRAY)
     
@@ -48,7 +53,7 @@ def thresh_callback(gray,val):
     # erosion = cv2.erode(drawing, kernel, iterations=1)
     closing = cv2.morphologyEx(drawing, cv2.MORPH_CLOSE, kernel)
     Contoured = closing
-    return Contoured, boundRect
+    return Contoured, boundRect, c
 
 def filter_color(im, y_low, y_high, u_low, u_high, v_low, v_high):
     """This filters the image based on YUV thresholds"""
@@ -70,7 +75,7 @@ def filter_color(im, y_low, y_high, u_low, u_high, v_low, v_high):
 
     return Filtered
 
-def extract_features(img, reduced_noise):
+def extract_features(img, img_filtered):
     """Detect features on rectangular regions of interest and returns
     coordinates of detected features
     Input: 
@@ -78,35 +83,47 @@ def extract_features(img, reduced_noise):
         gray: gray scale filtered image
         boundRect: parameters of a rectangle (x of top left corner,
         y of the same corner, width, height)"""
-    white = [255, 255, 255]
-    y,x=np.where(np.all(reduced_noise==white,axis=2))
-#    x_min=min(x)
-#    x_max=max(x)
-#    y_min=min(y)
-#    y_max=max(y)
-
-    pts = np.column_stack((x,y))
-    mask = [[0]*reduced_noise.shape[1]]*reduced_noise.shape[0]
-    mask = np.asarray(mask)
-    mask = mask.astype(np.uint8) 
-
-    for i in range(len(pts)):
-        mask[pts[i][1],pts[i][0]]=255
-    plt.figure()
-    plt.imshow(mask)
-    plt.title("mask")
+#    white = [255, 255, 255]
+#    y,x=np.where(np.all(img_filtered==white,axis=2))
+#    #y,x=np.where(img_filtered==255)
+#
+#    pts = np.column_stack((x,y))
+#    print(pts)
+#    mask = [[0]*img_filtered.shape[1]]*img_filtered.shape[0]
+#    mask = np.asarray(mask)
+#    mask = mask.astype(np.uint8) 
+#
+#    for i in range(len(pts)):
+#        mask[pts[i][1],pts[i][0]]=255
+#    plt.figure()
+#    plt.imshow(mask)
+#    plt.title("mask")
     
-    #random index
-    idx = np.random.randint(len(pts), size=10)
+    #for all contours
+#    for i in range(len(contours)):
+#        pts=contours[i]
+#        #generte random indices
+#        idx = np.random.randint(len(pts), size=7)
+#        #get the coordinates of random indices
+#        pts = pts[idx,:]
+#        pts = pts.reshape(-1,pts.shape[2])
+#        for i in range(len(pts)):
+#            cv2.circle(img, tuple(pts[i]), radius=5, color=(255,0,0), thickness=-1)
+    
+    #contour of max area
+    pts=contours
+    #generte random indices
+    idx = np.random.randint(len(pts), size=7)
+    #get the coordinates of random indices
     pts = pts[idx,:]
-
+    pts = pts.reshape(-1,pts.shape[2])
     for i in range(len(pts)):
-        print(tuple(pts[i]))
         cv2.circle(img, tuple(pts[i]), radius=5, color=(255,0,0), thickness=-1)
+        
     plt.figure()
     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     plt.title('Detected features of image' +str(start))
-    pts = pts.reshape((pts.shape[0], 1, 2))
+    #pts = pts.reshape((pts.shape[0], 1, 2))
     return pts
 
 image_dir_path='./AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
@@ -114,7 +131,7 @@ filenames = glob.glob(image_dir_path)
 filenames.sort(key=lambda f: int(re.sub('\D', '', f)))
 
 start=70
-end=85
+end=75
 
 for im in filenames[start:end]:
     img=calibration.undistort(im)
@@ -132,8 +149,6 @@ for im in filenames[start:end]:
     gray = cv2.blur(gray, (3,3))
             
     thresh = 28  # initial threshold
-    # cv2.createTrackbar('Canny Thresh:', source_window, thresh, max_thresh, thresh_callback)
-    img_contoured,boundRect = thresh_callback(gray,thresh)
 
     # Pole Detector
     Filtered = filter_color(img, y_low = 50, y_high = 200, u_low = 0, u_high = 120, 
@@ -143,12 +158,12 @@ for im in filenames[start:end]:
     Filtered = np.uint8(Filtered)
     reduced_noise = cv2.fastNlMeansDenoisingColored(Filtered, None, 90, 10, 7, 21)
     ret, reduced_noise = cv2.threshold(reduced_noise, 250, 255, cv2.THRESH_BINARY)
-
-    # find the contours    
-    img_contoured,boundRect= thresh_callback(reduced_noise,thresh)
     
+    # find the contours    
+    img_contoured,boundRect,contours= close_contour(reduced_noise,thresh)
+
     #detect features on poles
-    pts=extract_features(img, reduced_noise)
+    pts=extract_features(img, contours)
     
             
     # Show Results
@@ -158,15 +173,15 @@ for im in filenames[start:end]:
     
     plt.figure()
     plt.imshow(Filtered)
-    plt.title('pole detector'+str(start))
+    plt.title('pole detector image nr '+str(start))
     
     plt.figure()
     plt.imshow(reduced_noise)
-    plt.title('Noise Reduction' +str(start))
+    plt.title('Noise Reduction image nr ' +str(start))
                 
     plt.figure()
-    plt.imshow( img_contoured)
-    plt.title('Contour detector' +str(start))
+    plt.imshow(img_contoured)
+    plt.title('Contour detector image nr ' +str(start))
     
     
     start+=1
