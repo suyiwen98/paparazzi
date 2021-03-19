@@ -21,14 +21,54 @@ import random as rng
 #import calibration script
 import calibration
 
-def detect_features(img, gray,boundRect):
+def extract_features(img,gray,boundRect):
     """Detect features on rectangular regions of interest and returns
     coordinates of detected features
     Input: 
         img: callibrated image
-        gray: grayscale image
+        gray: gray scale filtered image
         boundRect: parameters of a rectangle (x of top left corner,
         y of the same corner, width, height)"""
+#    white = [255, 255, 255]
+#    y,x=np.where(np.all(img_filtered==white,axis=2))
+#    #y,x=np.where(img_filtered==255)
+#
+#    pts = np.column_stack((x,y))
+#    print(pts)
+#    mask = [[0]*img_filtered.shape[1]]*img_filtered.shape[0]
+#    mask = np.asarray(mask)
+#    mask = mask.astype(np.uint8) 
+#
+#    for i in range(len(pts)):
+#        mask[pts[i][1],pts[i][0]]=255
+#    plt.figure()
+#    plt.imshow(mask)
+#    plt.title("mask")
+    
+    #for all contours
+#    for i in range(len(contours)):
+#        pts=contours[i]
+#        #generte random indices
+#        idx = np.random.randint(len(pts), size=7)
+#        #get the coordinates of random indices
+#        pts = pts[idx,:]
+#        pts = pts.reshape(-1,pts.shape[2])
+#        for i in range(len(pts)):
+#            cv2.circle(img, tuple(pts[i]), radius=5, color=(255,0,0), thickness=-1)
+    
+#    #contour of max height
+#    pts=front_contours
+#    #generte random indices
+#    idx = np.random.randint(len(pts), size=7)
+#    #get the coordinates of random indices
+#    pts = pts[idx,:]
+#    pts = pts.reshape(-1,pts.shape[2])
+#    for i in range(len(pts)):
+#        cv2.circle(img, tuple(pts[i]), radius=5, color=(255,0,0), thickness=-1)
+#    plt.figure()
+#    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+#    plt.title('Detected features')
+    #pts = pts.reshape((pts.shape[0], 1, 2))
     # Initiate FAST object with default values
     fast = cv2.FastFeatureDetector_create(threshold = 1)
     
@@ -36,18 +76,14 @@ def detect_features(img, gray,boundRect):
     mask = [[0]*gray.shape[1]]*gray.shape[0]
     mask = np.asarray(mask)
     mask = mask.astype(np.uint8) 
-    for i in range(len(boundRect)):
-        (x,y,w,h) = boundRect[i]
-        
-        # Set the selected region within the mask to white
-        mask[y:y+h, x:x+w] = 255
-
-    print(mask.ndim)
-
-    plt.figure()
-    plt.imshow(reduced_noise)
-    plt.title('Pole detector with noise reduction ')
+    (x,y,w,h) = boundRect
     
+    if x>0 and y>0:
+        # Set the selected region within the mask to white (add 10 pixels to height and width)
+        mask[y-10:y+h+10, x-10:x+w+10] = 255
+    else:
+        mask[y:y+h+10, x-10:x+w+10] = 255
+
     plt.figure()
     plt.imshow(mask)
     plt.title('Mask')
@@ -57,7 +93,6 @@ def detect_features(img, gray,boundRect):
     
     #convert the keypoints to array
     pts = cv2.KeyPoint_convert(kp)
-    print(pts )
     pts = pts.reshape((pts.shape[0], 1, 2))
     
     #draw the keypoints on original callibrated image
@@ -69,9 +104,16 @@ def detect_features(img, gray,boundRect):
     return pts
 
 # https://docs.opencv.org/3.4/df/d0d/tutorial_find_contours.html
-def thresh_callback(gray,val):
+def get_front_contour(gray,val):
+    """Inputs:
+        gray: grayscale image
+        val: threshold value
+    Outputs:
+        Contoured: image with all contours
+        boundRect: bounding rectangular parameters (x of top left corner, y, width, height)
+        c: coordinates of contour with maximum height"""
+        
     threshold = val
-    
     # Detect edges using Canny
     canny_output = cv2.Canny(gray, threshold, threshold * 2)
     
@@ -82,17 +124,23 @@ def thresh_callback(gray,val):
     drawing = np.zeros((canny_output.shape[0], canny_output.shape[1], 3), dtype=np.uint8)
     
     boundRect = [None]*len(contours)
-    
+    h= [None]*len(contours)
     for i in range(len(contours)):
         # approximate the contour
         peri = cv2.arcLength(contours[i], True)
         approx = cv2.approxPolyDP(contours[i], 0.01 * peri, True)
         boundRect[i] = cv2.boundingRect(approx)  #(x,y,w,h)
+        h[i]    =boundRect[i][3]
+        #random color for each contour
         color = (rng.randint(0,256), rng.randint(0,256), rng.randint(0,256))
         cv2.rectangle(drawing, (int(boundRect[i][0]), int(boundRect[i][1])), \
           (int(boundRect[i][0]+boundRect[i][2]), int(boundRect[i][1]+boundRect[i][3])), color, 2)
         cv2.drawContours(drawing, contours, i, color, 2, cv2.LINE_8, hierarchy, 0)
-        
+    
+    #get contours of maximum height
+    front_contours=contours[np.argmax(h)]
+    #bounded rectable of the contour with max heigt
+    boundRect= cv2.boundingRect(front_contours)
     # Change contour colors to Blue
     drawing = cv2.cvtColor(drawing, cv2.COLOR_BGR2GRAY)
     
@@ -103,7 +151,7 @@ def thresh_callback(gray,val):
     # erosion = cv2.erode(drawing, kernel, iterations=1)
     closing = cv2.morphologyEx(drawing, cv2.MORPH_CLOSE, kernel)
     Contoured = closing
-    return Contoured, boundRect
+    return Contoured, boundRect, front_contours
 
 def derotation(A,B,C,points,flow_vectors):
     """Returns the translational optical flow vectors after subtracting the rotational components from total flow
@@ -158,8 +206,8 @@ def determine_optical_flow(prev_bgr, bgr,prev_bgr_time,bgr_time, graphics= True)
     thresh = 20
         
     # Pole Detector
-    Filtered = filter_color(prev_bgr, y_low = 50, y_high = 200, u_low = 0, u_high = 120, 
-                            v_low = 160, v_high = 220);
+    Filtered = filter_color(prev_bgr, y_low = 50, y_high = 250, u_low = 0, u_high = 150, 
+                                v_low = 150, v_high = 220);
     
     # Reduce noise on detected pole
     Filtered = np.uint8(Filtered)
@@ -167,12 +215,11 @@ def determine_optical_flow(prev_bgr, bgr,prev_bgr_time,bgr_time, graphics= True)
     ret, reduced_noise = cv2.threshold(reduced_noise, 250, 255, cv2.THRESH_BINARY)
     
     # find the contours and rectangular areas of interest
-    img_contoured,boundRect= thresh_callback(reduced_noise,thresh)
+    img_contoured,boundRect,front_contours= get_front_contour(reduced_noise,thresh)
     
     #FAST feature detection
-    points_old = detect_features(prev_bgr, prev_gray,boundRect)
-    
-    print(points_old)
+    points_old = extract_features(prev_bgr,prev_gray,boundRect)
+
     # Parameters for lucas kanade optical flow
     lk_params = dict( winSize  = (15,15),
                       maxLevel = 2,
@@ -362,11 +409,11 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
     FoE = np.asarray([0.0]*2);
 
     #starting from the 300th image from the dataset
-    start = 200
-    end   = 300 #max is n_images
+    start = 300
+    end   = 305 #max is n_images
     
     for im in np.arange(start, end, 1):
-        
+    
         #calibrates and rotates the image
         bgr = calibration.undistort(image_names[im])
         bgr_time = times[im]
@@ -377,55 +424,58 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
         
         if(im > start):
             
-            t_before = time.time()
-
-            # determine translational optical flow:
-            points_old, points_new, flow_vectors = determine_optical_flow(prev_bgr, bgr, prev_bgr_time,bgr_time, graphics=flow_graphics);
-            
-            print(points_old, len(points_old))
-            #get translational optical flow
-            flow_vectors=derotation(A[im],B[im],C[im],points_old,flow_vectors)
-            
-            # do stuff
-            elapsed = time.time() - t_before;
-            if(verbose):
-                print('Elapsed time = {}'.format(elapsed));
-            elapsed_times[im] = elapsed;
-  
-            # convert the pixels to a frame where the coordinate in the center is (0,0)
-            points_old -= 128.0;
-            
-            # extract the (3 parameters fit) parameters of the flow field:
-            pu, pv, err = estimate_linear_flow_field(points_old, flow_vectors);
-            
-            # ************************************************************************************
-            # extract the focus of expansion and divergence from the flow field:
-            # ************************************************************************************
-            horizontal_motion = -pu[2];  #u=ax+c
-            vertical_motion = -pv[2];    #v=by+c
-            divergence = (pu[0]+pv[1]) / 2.0; # 0.0;
-            
-            small_threshold = 1E-5;
-            if(abs(pu[0]) > small_threshold):
-                 FoE[0] = pu[2] / pu[0]; 
-            if(abs(pv[1]) > small_threshold):
-                 FoE[1] = pv[2] / pv[1];    
-            if(abs(divergence) > small_threshold):
-                 time_to_contact = 1 / divergence;
-                    
-            # book keeping:
-            horizontal_motion_over_time[im] = horizontal_motion;
-            vertical_motion_over_time[im] = vertical_motion;
-            FoE_over_time[im, 0] = FoE[0];
-            FoE_over_time[im, 1] = FoE[1];
-            divergence_over_time[im] = divergence;
-            errors_over_time[im] = err;
-            ttc_over_time[im] = time_to_contact;
-            
-            if(verbose):
-                # print the FoE and divergence:
-                print('error = {}, FoE = {}, {}, and divergence = {}'.format(err, FoE[0], FoE[1], divergence));
-            
+            try: 
+                t_before = time.time()
+    
+                # determine translational optical flow:
+                points_old, points_new, flow_vectors = determine_optical_flow(prev_bgr, bgr, prev_bgr_time,bgr_time, graphics=flow_graphics);
+                
+                #get translational optical flow
+                flow_vectors=derotation(A[im],B[im],C[im],points_old,flow_vectors)
+                
+                # do stuff
+                elapsed = time.time() - t_before;
+                if(verbose):
+                    print('Elapsed time = {}'.format(elapsed));
+                elapsed_times[im] = elapsed;
+      
+                # convert the pixels to a frame where the coordinate in the center is (0,0)
+                points_old -= 128.0;
+                
+                # extract the (3 parameters fit) parameters of the flow field:
+                pu, pv, err = estimate_linear_flow_field(points_old, flow_vectors);
+                
+                # ************************************************************************************
+                # extract the focus of expansion and divergence from the flow field:
+                # ************************************************************************************
+                horizontal_motion = -pu[2];  #u=ax+c
+                vertical_motion = -pv[2];    #v=by+c
+                divergence = (pu[0]+pv[1]) / 2.0; # 0.0;
+                
+                small_threshold = 1E-5;
+                if(abs(pu[0]) > small_threshold):
+                     FoE[0] = pu[2] / pu[0]; 
+                if(abs(pv[1]) > small_threshold):
+                     FoE[1] = pv[2] / pv[1];    
+                if(abs(divergence) > small_threshold):
+                     time_to_contact = 1 / divergence;
+                        
+                # book keeping:
+                horizontal_motion_over_time[im] = horizontal_motion;
+                vertical_motion_over_time[im] = vertical_motion;
+                FoE_over_time[im, 0] = FoE[0];
+                FoE_over_time[im, 1] = FoE[1];
+                divergence_over_time[im] = divergence;
+                errors_over_time[im] = err;
+                ttc_over_time[im] = time_to_contact;
+                
+                if(verbose):
+                    # print the FoE and divergence:
+                    print('error = {}, FoE = {}, {}, and divergence = {}'.format(err, FoE[0], FoE[1], divergence));
+            except:
+                plt.figure();
+                plt.imshow(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB));
+                plt.title('Error at '+str(prev_bgr_time) +"s ");
         # the current image becomes the previous image:
         prev_bgr = bgr;
         prev_bgr_time=bgr_time
