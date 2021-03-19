@@ -101,7 +101,7 @@ if __name__ == '__main__':
         # cv2.createTrackbar('Canny Thresh:', source_window, thresh, max_thresh, thresh_callback)
         img_contoured = thresh_callback(thresh)
 
-        # Grass Detector
+        # Pole Detector
         Filtered_pole = filter_color(img_file, y_low=70, y_high=100,
                                         u_low=110, u_high=130, v_low=110, v_high=140, resize_factor=1);
 
