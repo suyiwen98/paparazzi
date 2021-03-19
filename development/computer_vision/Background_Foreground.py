@@ -18,7 +18,7 @@ bgs_mog = cv2.createBackgroundSubtractorMOG2()
 start=70
 end=80
 for im in filenames[start:end]:
-    img,name=calibration.undistort(im)
+    img=calibration.undistort(im)
     rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB);
     
     #convert image to gray and blur it
