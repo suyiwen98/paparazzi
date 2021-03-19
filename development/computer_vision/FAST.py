@@ -70,7 +70,7 @@ def filter_color(im, y_low, y_high, u_low, u_high, v_low, v_high):
 
     return Filtered
 
-def detect_features(img, gray,boundRect):
+def extract_features(img, reduced_noise):
     """Detect features on rectangular regions of interest and returns
     coordinates of detected features
     Input: 
@@ -78,32 +78,35 @@ def detect_features(img, gray,boundRect):
         gray: gray scale filtered image
         boundRect: parameters of a rectangle (x of top left corner,
         y of the same corner, width, height)"""
-    # Initiate FAST object with default values
-    fast = cv2.FastFeatureDetector_create(threshold = 1)
-    
-    #create a mask of white poles and black background
-    mask = [[0]*gray.shape[1]]*gray.shape[0]
+    white = [255, 255, 255]
+    y,x=np.where(np.all(reduced_noise==white,axis=2))
+#    x_min=min(x)
+#    x_max=max(x)
+#    y_min=min(y)
+#    y_max=max(y)
+
+    pts = np.column_stack((x,y))
+    mask = [[0]*reduced_noise.shape[1]]*reduced_noise.shape[0]
     mask = np.asarray(mask)
     mask = mask.astype(np.uint8) 
-    for i in range(len(boundRect)):
-        (x,y,w,h) = boundRect[i]
-        
-        # Set the selected rectangle within the mask to white
-        mask[y:y+h, x:x+w] = 255
-    
-    # find and draw the keypoints
-    kp  = fast.detect(gray, mask = mask);
-    pts = cv2.KeyPoint_convert(kp)
-    pts = pts.reshape((pts.shape[0], 1, 2))
-        
-    img_pt = cv2.drawKeypoints(img, kp, None, color=(255,0,0))
-    plt.figure()
-    plt.imshow(cv2.cvtColor(img_pt, cv2.COLOR_BGR2RGB))
-    plt.title('Detected features of image nr ' +str(start))
 
+    for i in range(len(pts)):
+        mask[pts[i][1],pts[i][0]]=255
     plt.figure()
     plt.imshow(mask)
-    plt.title('Mask ' +str(start))
+    plt.title("mask")
+    
+    #random index
+    idx = np.random.randint(len(pts), size=10)
+    pts = pts[idx,:]
+
+    for i in range(len(pts)):
+        print(tuple(pts[i]))
+        cv2.circle(img, tuple(pts[i]), radius=5, color=(255,0,0), thickness=-1)
+    plt.figure()
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.title('Detected features of image' +str(start))
+    pts = pts.reshape((pts.shape[0], 1, 2))
     return pts
 
 image_dir_path='./AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
@@ -145,7 +148,7 @@ for im in filenames[start:end]:
     img_contoured,boundRect= thresh_callback(reduced_noise,thresh)
     
     #detect features on poles
-    detect_features(img,gray,boundRect)
+    pts=extract_features(img, reduced_noise)
     
             
     # Show Results
