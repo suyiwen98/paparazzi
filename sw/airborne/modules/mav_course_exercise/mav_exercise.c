@@ -49,9 +49,9 @@ enum navigation_state_t navigation_state = SAFE;
 int32_t color_count = 0;               // orange color count from color filter for obstacle detection
 int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
 float moveDistance = 2;                 // waypoint displacement [m]
-float oob_haeding_increment = 5.f;      // heading angle increment if out of bounds [deg]
+uint8_t oob_heading_increment = 5;      // heading angle increment if out of bounds [deg]
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
-float heading_increment = 10.f;
+uint8_t heading_increment = 10;
 int16_t turn_dir = 0;
 
 // needed to receive output from a separate module running on a parallel process
@@ -128,15 +128,15 @@ void mav_exercise_periodic(void) {
       waypoint_move_here_2d(WP_GOAL);
       waypoint_move_here_2d(WP_TRAJECTORY);
 
-      increase_nav_heading(oob_haeding_increment);
+      increase_nav_heading(oob_heading_increment);
       moveWaypointForward(WP_TRAJECTORY, 1.5f);
 
       if (InsideObstacleZone(WaypointX(WP_TRAJECTORY), WaypointY(WP_TRAJECTORY))) {
         // add offset to head back into arena
-        increase_nav_heading(oob_haeding_increment);
+        increase_nav_heading(oob_heading_increment);
         navigation_state = SAFE;
         if(rand() % 10 == 0){
-        oob_haeding_increment = oob_haeding_increment * -1;
+            oob_heading_increment = oob_heading_increment * -1;
         }
       }
       break;

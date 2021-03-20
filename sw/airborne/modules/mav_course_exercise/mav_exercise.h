@@ -21,7 +21,12 @@
 #ifndef PAPARAZZI_MAV_EXERCISE_H
 #define PAPARAZZI_MAV_EXERCISE_H
 
+#include <stdint.h>
+
 extern void mav_exercise_init(void);
 extern void mav_exercise_periodic(void);
+
+extern uint8_t heading_increment;
+extern uint8_t oob_heading_increment;
 
 #endif //PAPARAZZI_MAV_EXERCISE_H
