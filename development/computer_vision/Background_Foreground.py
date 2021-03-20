@@ -19,8 +19,8 @@ start=70
 end=80
 for im in filenames[start:end]:
     img=calibration.undistort(im)
-    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB);
-    
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
     #convert image to gray and blur it
     gray =  cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray =  cv2.blur(gray, (3,3))

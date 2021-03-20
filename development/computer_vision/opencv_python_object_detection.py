@@ -5,8 +5,10 @@
 import cv2
 import numpy as np
 
+
 def nothing(x):
     pass
+
 
 cv2.namedWindow("Tracking")
 cv2.createTrackbar("LH", "Tracking", 0, 255, nothing)
