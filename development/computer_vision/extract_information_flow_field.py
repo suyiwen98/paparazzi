@@ -29,47 +29,10 @@ def extract_features(img,gray,boundRect):
         gray: gray scale filtered image
         boundRect: parameters of rectangle of frontal pole (x of top left corner,
         y of the same corner, width, height)"""
-#    white = [255, 255, 255]
-#    y,x=np.where(np.all(img_filtered==white,axis=2))
-#    #y,x=np.where(img_filtered==255)
-#
-#    pts = np.column_stack((x,y))
-#    print(pts)
-#    mask = [[0]*img_filtered.shape[1]]*img_filtered.shape[0]
-#    mask = np.asarray(mask)
-#    mask = mask.astype(np.uint8) 
-#
-#    for i in range(len(pts)):
-#        mask[pts[i][1],pts[i][0]]=255
-#    plt.figure()
-#    plt.imshow(mask)
-#    plt.title("mask")
-    
-    #for all contours
-#    for i in range(len(contours)):
-#        pts=contours[i]
-#        #generte random indices
-#        idx = np.random.randint(len(pts), size=7)
-#        #get the coordinates of random indices
-#        pts = pts[idx,:]
-#        pts = pts.reshape(-1,pts.shape[2])
-#        for i in range(len(pts)):
-#            cv2.circle(img, tuple(pts[i]), radius=5, color=(255,0,0), thickness=-1)
-    
-#    #contour of max height
-#    pts=front_contours
-#    #generte random indices
-#    idx = np.random.randint(len(pts), size=7)
-#    #get the coordinates of random indices
-#    pts = pts[idx,:]
-#    pts = pts.reshape(-1,pts.shape[2])
-#    for i in range(len(pts)):
-#        cv2.circle(img, tuple(pts[i]), radius=5, color=(255,0,0), thickness=-1)
-#    plt.figure()
-#    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-#    plt.title('Detected features')
-    #pts = pts.reshape((pts.shape[0], 1, 2))
-    # Initiate FAST object with default values
+    #************************************************************
+    #TODO: to be implemented in c 
+    #************************************************************
+    #initialize fast feature
     fast = cv2.FastFeatureDetector_create(threshold = 1)
     
     #create a mask of white poles and black background
@@ -78,11 +41,16 @@ def extract_features(img,gray,boundRect):
     mask = mask.astype(np.uint8) 
     (x,y,w,h) = boundRect
     
-    if x-10>0 and y-10>0 and gray.shape[0]>x+w+15 and gray.shape[1]>y+h+15:
-        # Set the selected region within the mask to white (add 10 pixels to height and width)
-        mask[y-15:y+h+15, x-10:x+w+10] = 255
-    else:
-        mask[y:min(gray.shape[0],y+h+10), x:min(gray.shape[1],x+w+10)] = 255
+    if gray.shape[1]>x+w+10 and gray.shape[0]>y+h+15:
+        
+        if x-10>0 and y-15>0:
+            # Set the selected region within the mask to white (add 10 pixels to height and width)
+            mask[y-15:y+h+15, x-10:x+w+10] = 255
+            
+        else:
+            mask[y:min(gray.shape[0],y+h+15), x:min(gray.shape[1],x+w+10)] = 255
+    else: 
+        mask[y:y+h, x:x+w] = 255
  
     plt.figure()
     plt.imshow(mask)
@@ -112,7 +80,9 @@ def get_front_contour(gray,val):
         Contoured: image with all contours
         boundRect: bounding rectangular parameters (x of top left corner, y, width, height)
         c: coordinates of contour with maximum height"""
-        
+    #************************************************************
+    #TODO: to be implemented in c 
+    #************************************************************
     threshold = val
     # Detect edges using Canny
     canny_output = cv2.Canny(gray, threshold, threshold * 2)
@@ -158,18 +128,19 @@ def derotation(A,B,C,points,flow_vectors):
     inputs: 
         A,B,C: rotational rates of the camera
         flow_vectors: total optical flow vectors"""
-    for i in range(len(points[0])):
-        x=points[0][i]
-        y=points[1][i]
-        
+    #already implemented in existing optical flow modeuls
+    for i in range(len(points)):
+        x=points[i][0]
+        y=points[i][1]
+
         #rotational component of horizontal flow
-        ur = A*x*y-B*x**2-B+C*y
+        ur = (A*x*y-B*x**2-B+C*y)/1000
         #rotational component of vertical flow
-        vr = -C*x+A+A*y**2-B*x*y
+        vr = (-C*x+A+A*y**2-B*x*y)/1000
         
-        flow_vectors[0][i]=flow_vectors[0][i]-ur
-        flow_vectors[1][i]=flow_vectors[1][i]-vr
-        
+        flow_vectors[i][0]=flow_vectors[i][0]-ur
+        flow_vectors[i][1]=flow_vectors[i][1]-vr
+
     return flow_vectors
 
 def filter_color(im, y_low, y_high, u_low, u_high, v_low, v_high):
@@ -177,6 +148,10 @@ def filter_color(im, y_low, y_high, u_low, u_high, v_low, v_high):
     inputs:
         im: bgr colored image
         y_low,y_high, u_low, u_high, v_low, v_high: YUV thresholds"""
+        
+    #************************************************************
+    #TODO: to be implemented in c 
+    #************************************************************
     # convert an image from RBG space to YUV.
     YUV = cv2.cvtColor(im, cv2.COLOR_BGR2YUV);
     Filtered = np.zeros([YUV.shape[0], YUV.shape[1], 3]);
@@ -195,7 +170,10 @@ def filter_color(im, y_low, y_high, u_low, u_high, v_low, v_high):
     return Filtered
 
 def determine_optical_flow(prev_bgr, bgr,prev_bgr_time,bgr_time, graphics= True):
-        
+    #*******************************************************************
+    #TODO: might need to be modified in existing paparazzi optical flow modules
+    #*********************************************************************
+    
     # convert the images to grayscale and blur it to remove noise
     prev_gray = cv2.cvtColor(prev_bgr, cv2.COLOR_BGR2GRAY);
     prev_gray = cv2.blur(prev_gray, (3,3))
@@ -219,7 +197,7 @@ def determine_optical_flow(prev_bgr, bgr,prev_bgr_time,bgr_time, graphics= True)
     
     #FAST feature detection
     points_old = extract_features(prev_bgr,prev_gray,boundRect)
-
+    
     # Parameters for lucas kanade optical flow
     lk_params = dict( winSize  = (15,15),
                       maxLevel = 2,
@@ -260,6 +238,8 @@ def estimate_linear_flow_field(points_old, flow_vectors, RANSAC=True, n_iteratio
         RANSAC: use RANSAC for more robust calculations
         n_iterations: number of iterations before stopping
         error_threshold: when the error reaches this number, it stops"""
+    #already implemented in existing paparazzi optical flow modules 
+    
     n_points = points_old.shape[0];
     sample_size = 3; # minimal sample size is 3
     
@@ -398,7 +378,7 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
         
         if(im > start):
             
-            try: 
+            #try: 
                 t_before = time.time()
     
                 # determine translational optical flow:
@@ -446,11 +426,11 @@ def extract_flow_information(image_dir_path, df, verbose=True, graphics = True, 
                 if(verbose):
                     # print the FoE and divergence:
                     print('error = {}, FoE = {}, {}, Time to Contact ={}, and Divergence = {}'.format(err, FoE[0], FoE[1], time_to_contact, divergence));
-            except:
-                print("Error Occurred")
-                plt.figure();
-                plt.imshow(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB));
-                plt.title('Error at '+str(prev_bgr_time) +"s ");
+#            except:
+#                print("Error Occurred")
+#                plt.figure();
+#                plt.imshow(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB));
+#                plt.title('Error at '+str(prev_bgr_time) +"s ");
                 
         # the current image becomes the previous image:
         prev_bgr = bgr;
