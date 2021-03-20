@@ -13,6 +13,7 @@ import calibration
 import numpy as np
 import re
 import random as rng
+import pandas as pd
 
 # https://docs.opencv.org/3.4/df/d0d/tutorial_find_contours.html
 def get_front_contour(gray,val):
@@ -84,6 +85,26 @@ def filter_color(im, y_low, y_high, u_low, u_high, v_low, v_high):
 
     return Filtered
 
+def derotation(A,B,C,points,flow_vectors):
+    """Returns the translational optical flow vectors after subtracting the rotational components from total flow
+    inputs: 
+        A,B,C: rotational rates of the camera
+        flow_vectors: total optical flow vectors"""
+
+    for i in range(len(points[1])+1):
+        x=points[0][i]
+        y=points[1][i]
+        
+        #rotational component of horizontal flow
+        ur = A*x*y-B*x**2-B+C*y
+        #rotational component of vertical flow
+        vr = -C*x+A+A*y**2-B*x*y
+        
+        flow_vectors[0][i]=flow_vectors[0][i]-ur
+        flow_vectors[1][i]=flow_vectors[1][i]-vr
+        
+    return flow_vectors
+
 def extract_features(img,gray,boundRect):
     """Detect features on rectangular regions of interest and returns
     coordinates of detected features
@@ -126,16 +147,21 @@ def extract_features(img,gray,boundRect):
     mask = np.asarray(mask)
     mask = mask.astype(np.uint8) 
     (x,y,w,h) = boundRect
-    
-    if x-10>0 and y-10>0 and gray.shape[0]>x+w+15 and gray.shape[1]>y+h+10:
-        # Set the selected region within the mask to white (add 10 pixels to height and width)
-        mask[y-15:y+h+15, x-10:x+w+10] = 255
-    else:
-        mask[y:y+h+10, x:x+w+10] = 255
+    print(x,y,w,h)
+    if gray.shape[1]>x+w+10 and gray.shape[0]>y+h+15:
+        
+        if x-10>0 and y-15>0:
+            # Set the selected region within the mask to white (add 10 pixels to height and width)
+            mask[y-15:y+h+15, x-10:x+w+10] = 255
+            
+        else:
+            mask[y:min(gray.shape[0],y+h+15), x:min(gray.shape[1],x+w+10)] = 255
+    else: 
+        mask[y:y+h, x:x+w] = 255
 
     plt.figure()
     plt.imshow(mask)
-    plt.title('Mask')
+    plt.title('Mask '+str(start))
     
     # find the keypoints
     kp  = fast.detect(gray, mask = mask);
@@ -144,6 +170,7 @@ def extract_features(img,gray,boundRect):
     pts = cv2.KeyPoint_convert(kp)
     pts = pts.reshape((pts.shape[0], 1, 2))
     
+    print(pts)
     #draw the keypoints on original callibrated image
     img_pt = cv2.drawKeypoints(img, kp, None, color=(255,0,0))
     plt.figure()
@@ -192,8 +219,10 @@ if __name__ == '__main__':
         
         #FAST feature detection
         points_old = extract_features(img,gray,boundRect)
+        print(points_old)
         
-                
+        df=pd.read_csv(r'./AE4317_2019_datasets/cyberzoo_poles_panels_mats/20190121-142943.csv')
+        
         # Show Results
     #    plt.figure()
     #    plt.imshow(img)
