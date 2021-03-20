@@ -50,6 +50,7 @@ PRINT_CONFIG_VAR(OPTICFLOW_AGL_ID)
 #endif
 PRINT_CONFIG_VAR(OPTICFLOW_FPS)
 
+
 /* The main opticflow variables */
 struct opticflow_t opticflow;                      ///< Opticflow calculations
 static struct opticflow_result_t opticflow_result; ///< The opticflow result

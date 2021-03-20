@@ -61,6 +61,7 @@
   </doc>
 
   <settings>
+  
 	<dl_settings NAME="Vision stabilization">
       <!-- Optical flow calculations parameters -->
       <dl_settings name="vision_calc">
@@ -92,7 +93,7 @@
         <dl_setting var="opticflow.actfast_long_step" module="computer_vision/opticflow_module" min="1" step="1" max="100" shortname="actfast_long_step" param="OPTICFLOW_ACTFAST_LONG_STEP"/>
         <dl_setting var="opticflow.actfast_short_step" module="computer_vision/opticflow_module" min="1" step="1" max="10" shortname="actfast_short_step" param="OPTICFLOW_ACTFAST_SHORT_STEP"/>
         <dl_setting var="opticflow.actfast_min_gradient" module="computer_vision/opticflow_module" min="1" step="1" max="255" shortname="actfast_min_gradient" param="OPTICFLOW_ACTFAST_MIN_GRADIENT"/>
-        <dl_setting var="opticflow.actfast_gradient_method" module="computer_vision/opticflow_module" min="0" step="1" max="1"  values="SIMPLE|SOBEL" shortname="actfast_gradient_method" param="OPTICFLOW_ACTFAST_GRADIENT_METHOD"/>        
+        <dl_setting var="opticflow.actfast_gradient_method" module="computer_vision/opticflow_module" min="0" step="1" max="1"  values="SIMPLE|SOBEL" shortname="actfast_gradient_method" param="OPTICFLOW_ACTFAST_GRADIENT_METHOD"/>      
 
         <!-- Changes pyramid level of lucas kanade optical flow. -->
         <dl_setting var="opticflow.pyramid_level" module="computer_vision/opticflow_module" min="0" step="1" max="10" shortname="pyramid_level" param="OPTICFLOW_PYRAMID_LEVEL"/>

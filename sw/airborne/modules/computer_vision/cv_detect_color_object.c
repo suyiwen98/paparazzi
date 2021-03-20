@@ -53,12 +53,12 @@ static pthread_mutex_t mutex;
 #endif
 
 // Filter Settings
-uint8_t cod_lum_min1 = 0;
-uint8_t cod_lum_max1 = 0;
-uint8_t cod_cb_min1 = 0;
-uint8_t cod_cb_max1 = 0;
-uint8_t cod_cr_min1 = 0;
-uint8_t cod_cr_max1 = 0;
+uint8_t cod_lum_min1 = 70;
+uint8_t cod_lum_max1 = 100;
+uint8_t cod_cb_min1 = 70;
+uint8_t cod_cb_max1 = 90;
+uint8_t cod_cr_min1 = 110;
+uint8_t cod_cr_max1 = 140;
 
 uint8_t cod_lum_min2 = 0;
 uint8_t cod_lum_max2 = 0;
@@ -66,6 +66,8 @@ uint8_t cod_cb_min2 = 0;
 uint8_t cod_cb_max2 = 0;
 uint8_t cod_cr_min2 = 0;
 uint8_t cod_cr_max2 = 0;
+
+int16_t turn = 0;
 
 bool cod_draw1 = false;
 bool cod_draw2 = false;
@@ -156,7 +158,7 @@ void color_object_detector_init(void)
   memset(global_filters, 0, 2*sizeof(struct color_object_t));
   pthread_mutex_init(&mutex, NULL);
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA1
-#ifdef COLOR_OBJECT_DETECTOR_LUM_MIN1
+/*#ifdef COLOR_OBJECT_DETECTOR_LUM_MIN1
   cod_lum_min1 = COLOR_OBJECT_DETECTOR_LUM_MIN1;
   cod_lum_max1 = COLOR_OBJECT_DETECTOR_LUM_MAX1;
   cod_cb_min1 = COLOR_OBJECT_DETECTOR_CB_MIN1;
@@ -166,7 +168,7 @@ void color_object_detector_init(void)
 #endif
 #ifdef COLOR_OBJECT_DETECTOR_DRAW1
   cod_draw1 = COLOR_OBJECT_DETECTOR_DRAW1;
-#endif
+#endif*/
 
   cv_add_to_device(&COLOR_OBJECT_DETECTOR_CAMERA1, object_detector1, COLOR_OBJECT_DETECTOR_FPS1);
 #endif
@@ -211,7 +213,10 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max)
 {
-  uint32_t cnt = 0;
+  uint32_t cnt=0;
+  uint32_t cnt_left = 0;
+  uint32_t cnt_mid = 0;
+  uint32_t cnt_right = 0;
   uint32_t tot_x = 0;
   uint32_t tot_y = 0;
   uint8_t *buffer = img->buf;
@@ -237,6 +242,15 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
       if ( (*yp >= lum_min) && (*yp <= lum_max) &&
            (*up >= cb_min ) && (*up <= cb_max ) &&
            (*vp >= cr_min ) && (*vp <= cr_max )) {
+    	  if( y < (img->h)/3){
+    		  cnt_left ++;
+    	  }
+    	  else if(y < (img->h)*2/3){
+    		  cnt_mid ++;
+    	  }
+    	  else{
+    		  cnt_right ++;
+    	  }
         cnt ++;
         tot_x += x;
         tot_y += y;
@@ -245,6 +259,24 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
         }
       }
     }
+  }
+
+  //PRINT("Left: %d  Mid: %d Right: %d \n", cnt_left, cnt_mid, cnt_right);
+  if(cnt_left > cnt_mid){
+	  if(cnt_left > cnt_right){
+		  turn = -1;
+	  }
+	  else{
+		  turn = 1;
+	  }
+  }
+  else{
+	  if(cnt_mid > cnt_right){
+		  turn = 0;
+	  }
+	  else{
+		  turn = 1;
+	  }
   }
   if (cnt > 0) {
     *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
@@ -265,7 +297,7 @@ void color_object_detector_periodic(void)
 
   if(local_filters[0].updated){
     AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID, local_filters[0].x_c, local_filters[0].y_c,
-        0, 0, local_filters[0].color_count, 0);
+        0, 0, local_filters[0].color_count, turn);
     local_filters[0].updated = false;
   }
   if(local_filters[1].updated){
