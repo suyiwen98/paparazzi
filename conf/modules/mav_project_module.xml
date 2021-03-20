@@ -1,0 +1,28 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="mav_project_module" dir="mav_project">
+    <doc>
+        <description>
+            MAV project module for Autonomous Flight of MAV Course
+        </description>
+    </doc>
+
+    <settings>
+        <dl_settings>
+            <dl_settings name="Mav Project">
+                <dl_setting var="heading_increment" min="0" step="1" max="180" shortname="heading_increment"/>
+                <dl_setting var="oob_heading_increment" min="0" step="1" max="180" shortname="oob_heading_increment"/>
+            </dl_settings>
+        </dl_settings>
+    </settings>
+
+    <depends>cv_detect_color_object</depends>
+    <header>
+        <file name="mav_project.h"/>
+    </header>
+    <init fun="mav_project_init()"/>
+    <periodic fun="mav_project_periodic()" freq="4"/>
+    <makefile target="ap|nps">
+        <file name="mav_project.c"/>
+    </makefile>
+</module>
