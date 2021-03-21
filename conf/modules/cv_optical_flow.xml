@@ -4,7 +4,7 @@
   <doc>
     <description>Optical Flow</description>
 
-    <define name="COLOR_OBJECT_DETECTOR_CAMERA1" value="front_camera|bottom_camera" description="Video device to use"/>
+    <define name="OPTICAL_FLOW_DETECTOR_CAMERA1" value="front_camera|bottom_camera" description="Video device to use"/>
   </doc>
 
   <settings>
