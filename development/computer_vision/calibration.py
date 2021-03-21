@@ -116,7 +116,7 @@ def undistort(image_name):
     img = cv2.imread(image_name)
 
     # rotates the image
-    img = cv2.rotate(img, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE)
+    img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
     # get height and width of the image
     h, w = img.shape[:2]
 
