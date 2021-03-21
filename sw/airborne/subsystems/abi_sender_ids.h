@@ -487,4 +487,11 @@
 #define JOYSTICK_ID 1
 #endif
 
+/*
+ * Optical flow message
+ */
+#ifndef OPTICAL_FLOW_ID
+#define OPTICAL_FLOW_ID 1
+#endif
+
 #endif /* ABI_SENDER_IDS_H */

@@ -18,13 +18,13 @@
   <depends>video_thread</depends>
 
   <header>
-    <file name="optical_flow.h"/>
+    <file name="cv_optical_flow.h"/>
   </header>
 
   <init fun="optical_flow_init()"/>
   <periodic fun="optical_flow_periodic()" freq="50"/>
   <makefile target="ap|nps">
-    <file name="optical_flow.c"/>
+    <file name="cv_optical_flow.c"/>
   </makefile>
 </module>
 

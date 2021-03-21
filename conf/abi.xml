@@ -204,6 +204,13 @@
       <field name="throttle"  type="int16_t">Throttle input in pprz_t [0;9600] or [-9600;9600] (for vertical speed control for instance)</field>
     </message>
 
+    <message name="OPTICAL_FLOW2" id="29">
+      <field name="error" type="int16_t">Error</field>
+      <field name="foe_x" type="int16_t">Focus of expansion x</field>
+      <field name="foe_y" type="int16_t">Focus of expansion y</field>
+      <field name="ttc" type="int16_t">Time to contact</field>
+      <field name="divergence" type="int16_t">Divergence</field>
+    </message>
   </msg_class>
 
 </protocol>
