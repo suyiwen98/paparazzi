@@ -1,0 +1,30 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="cv_optical_flow" dir="mav_project">
+  <doc>
+    <description>Optical Flow</description>
+
+    <define name="COLOR_OBJECT_DETECTOR_CAMERA1" value="front_camera|bottom_camera" description="Video device to use"/>
+  </doc>
+
+  <settings>
+    <dl_settings>
+      <dl_settings name="Optical Flow">
+         <dl_setting var="cod_lum_min1" min="0" step="1" max="255" shortname="y_min1"/>
+      </dl_settings>
+    </dl_settings>
+  </settings>
+
+  <depends>video_thread</depends>
+
+  <header>
+    <file name="optical_flow.h"/>
+  </header>
+
+  <init fun="optical_flow_init()"/>
+  <periodic fun="optical_flow_periodic()" freq="50"/>
+  <makefile target="ap|nps">
+    <file name="optical_flow.c"/>
+  </makefile>
+</module>
+
