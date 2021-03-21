@@ -46,18 +46,19 @@ enum navigation_state_t {
 // define and initialise global variables
 float oa_color_count_frac = 0.10f;
 enum navigation_state_t navigation_state = SAFE;
-int32_t color_count = 0;               // orange color count from color filter for obstacle detection
-int16_t obstacle_free_confidence = 0;   // a measure of how certain we are that the way ahead is safe.
-float moveDistance = 2;                 // waypoint displacement [m]
-uint8_t oob_heading_increment = 5;      // heading angle increment if out of bounds [deg]
+int32_t color_count = 0;               			// orange color count from color filter for obstacle detection
+int16_t obstacle_free_confidence = 0;  	// a measure of how certain we are that the way ahead is safe.
+float moveDistance = 2;                 		// waypoint displacement [m]
+uint8_t oob_heading_increment = 5;      	// heading angle increment if out of bounds [deg]
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
-uint8_t heading_increment = 10;
+uint8_t heading_increment = 10; 			// increment of heading in degrees
 int16_t turn_dir = 0;
 
 // needed to receive output from a separate module running on a parallel process
 #ifndef ORANGE_AVOIDER_VISUAL_DETECTION_ID
 #define ORANGE_AVOIDER_VISUAL_DETECTION_ID ABI_BROADCAST
 #endif
+
 static abi_event color_detection_ev;
 static void color_detection_cb(uint8_t __attribute__((unused)) sender_id,
                                int16_t __attribute__((unused)) pixel_x, int16_t __attribute__((unused)) pixel_y,
