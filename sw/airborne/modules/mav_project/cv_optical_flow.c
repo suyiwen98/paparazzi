@@ -34,8 +34,10 @@ struct optical_flow_object_t global_filters[1];
 struct image_t *optical_flow(struct image_t *img);
 struct image_t *optical_flow(struct image_t *img) {
     // Optical flow processing code goes here //
-    int result = opencv_optical_flow((char *) img->buf, img->w, img->h);
+    //TODO: Actually send img_prev and not just the same image twice
+    char* result = opencv_optical_flow((char *) img->buf, img->w, img->h, (char *) img->buf, img->w, img->h);
     PRINT("Got result %d\n", result);
+//    img->buf = result; // This line will crash the program
 
     // Set some dummy values for testing
     int32_t error = 1;

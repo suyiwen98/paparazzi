@@ -27,37 +27,72 @@
 #include "opencv_optical_flow.h"
 
 
-
 using namespace std;
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/photo.hpp>
+
 using namespace cv;
+
 #include "modules/computer_vision/opencv_image_functions.h"
 
+#define PRINT(string, ...) fprintf(stderr, "[opencv_optical_flow->%s()] " string,__FUNCTION__ , ##__VA_ARGS__)
 
-int opencv_optical_flow(char *img, int width, int height)
-{
-  // Create a new image, using the original bebop image.
-  Mat M(height, width, CV_8UC2, img);
-  Mat image;
+Mat filter_color(Mat image, int y_low, int y_high, int u_low, int u_high, int v_low, int v_high) {
+    Mat yuvImage;
+    cvtColor(image, yuvImage, CV_BGR2YUV);
 
-#if OPENCVDEMO_GRAYSCALE
-  //  Grayscale image example
-  cvtColor(M, image, CV_YUV2GRAY_Y422);
-  // Canny edges, only works with grayscale image
-  int edgeThresh = 35;
-  Canny(image, image, edgeThresh, edgeThresh * 3);
-  // Convert back to YUV422, and put it in place of the original image
-  grayscale_opencv_to_yuv422(image, img, width, height);
-#else // OPENCVDEMO_GRAYSCALE
-  // Color image example
-  // Convert the image to an OpenCV Mat
-  cvtColor(M, image, CV_YUV2BGR_Y422);
-  // Blur it, because we can
-  blur(image, image, Size(5, 5));
-  // Convert back to YUV422 and put it in place of the original image
-  colorbgr_opencv_to_yuv422(image, img, width, height);
-#endif // OPENCVDEMO_GRAYSCALE
+    int nRows = yuvImage.rows;
+    int nCols = yuvImage.cols;
 
-  return 0;
+    for(int r = 0; r < nRows; ++r) {
+        for(int c = 0; c < nCols; ++c) {
+            // Extract pixel color from image
+            Vec3b &yuv = yuvImage.at<Vec3b>(r, c);
+
+            if (y_low <= yuv[0] && yuv[0] <= y_high &&
+                u_low <= yuv[1] && yuv[1] <= u_high &&
+                v_low <= yuv[2] && yuv[2] <= v_high) {
+                yuv[0] = 255;
+                yuv[1] = 255;
+                yuv[2] = 255;
+            } else {
+                yuv[0] = 255;
+                yuv[1] = 255;
+                yuv[2] = 255;
+            }
+        }
+    }
+    return yuvImage;
+}
+
+char* opencv_optical_flow(char *img, int width, int height, char *img_prev, int width_prev, int height_prev) {
+    // Create a new image, using the original bebop image.
+    Mat M(height, width, CV_8UC3, img);
+    Mat image;
+    cvtColor(M, image, CV_BGR2GRAY);
+    blur(image, image, Size(3, 3));
+
+    Mat M_prev(height_prev, width_prev, CV_8UC3, img_prev);
+    Mat image_prev;
+    cvtColor(M_prev, image_prev, CV_BGR2GRAY);
+    blur(image_prev, image_prev, Size(3, 3));
+
+    int y_low = 50;
+    int y_high = 250;
+    int u_low = 0;
+    int u_high = 150;
+    int v_low = 140;
+    int v_high = 220;
+
+    Mat filtered = filter_color(M_prev, y_low, y_high, u_low, u_high, v_low, v_high);
+
+    Mat reduced_noise;
+    fastNlMeansDenoisingColored(filtered, reduced_noise, 90, 10, 7, 21);
+    threshold(reduced_noise, reduced_noise, 250, 255, THRESH_BINARY);
+
+    img = (char *)reduced_noise.data; // Try to write the changed image back to the input, but this doesn't actually work.
+
+    return (char *) reduced_noise.data;
 }
