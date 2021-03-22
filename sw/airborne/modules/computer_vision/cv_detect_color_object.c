@@ -25,7 +25,7 @@
  * if you are over the defined object or not
  */
 
-// Own header
+// Adopted by Agrim Sharma to detect grass, comments added by Marko Reinhard, 03-22-2020
 #include "modules/computer_vision/cv_detect_color_object.h"
 #include "modules/computer_vision/cv.h"
 #include "subsystems/abi.h"
@@ -52,7 +52,7 @@ static pthread_mutex_t mutex;
 #define COLOR_OBJECT_DETECTOR_FPS2 0 ///< Default FPS (zero means run at camera fps)
 #endif
 
-// Filter Settings
+// Filter Settings for grass detection in Cyberzoo
 uint8_t cod_lum_min1 = 70;
 uint8_t cod_lum_max1 = 100;
 uint8_t cod_cb_min1 = 70;
