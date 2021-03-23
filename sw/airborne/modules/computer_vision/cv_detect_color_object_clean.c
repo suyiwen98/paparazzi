@@ -52,7 +52,6 @@ static pthread_mutex_t mutex;
 #define COLOR_OBJECT_DETECTOR_FPS2 0 ///< Default FPS (zero means run at camera fps)
 #endif
 
-
 // Filter Settings
 uint8_t cod_lum_min1 = 0;
 uint8_t cod_lum_max1 = 0;
@@ -72,9 +71,6 @@ bool cod_draw1 = false;
 bool cod_draw2 = false;
 
 // define global variables
-int16_t turn = 0; // variable that is passed to navigation code from grass detector filter, decision if A/C turns
-
-
 struct color_object_t
     {
 	int32_t x_c;
@@ -89,11 +85,6 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
 	bool draw, uint8_t lum_min, uint8_t lum_max, uint8_t cb_min,
 	uint8_t cb_max, uint8_t cr_min, uint8_t cr_max);
 
-uint32_t find_object_grass(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
-	bool draw, uint8_t lum_min, uint8_t lum_max, uint8_t cb_min,
-	uint8_t cb_max, uint8_t cr_min, uint8_t cr_max);
-
-
 /*
  * object_detector
  * @param img - input image to process
@@ -107,9 +98,6 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
     uint8_t cr_min, cr_max;
     bool draw;
 
-   int32_t x_c, y_c;
-   uint32_t count = 0;
-
     switch (filter)
 	{
     case 1:
@@ -120,10 +108,6 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
 	cr_min = cod_cr_min1;
 	cr_max = cod_cr_max1;
 	draw = cod_draw1;
-
-	// Filter and decide where to turn (find_object_grass sets turn)
-	count = find_object_grass(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
-
 	break;
     case 2:
 	lum_min = cod_lum_min2;
@@ -133,15 +117,16 @@ static struct image_t *object_detector(struct image_t *img, uint8_t filter)
 	cr_min = cod_cr_min2;
 	cr_max = cod_cr_max2;
 	draw = cod_draw2;
-
-	// Filter and find centroid
-	count = find_object_centroid(img, &x_c, &y_c, draw, lum_min, lum_max, cb_min, cb_max, cr_min, cr_max);
-
 	break;
     default:
 	return img;
 	};
 
+    int32_t x_c, y_c;
+
+    // Filter and find centroid
+    uint32_t count = find_object_centroid(img, &x_c, &y_c, draw, lum_min,
+	    lum_max, cb_min, cb_max, cr_min, cr_max);
     VERBOSE_PRINT("Color count %d: %u, threshold %u, x_c %d, y_c %d\n", camera, object_count, count_threshold, x_c, y_c); VERBOSE_PRINT("centroid %d: (%d, %d) r: %4.2f a: %4.2f\n", camera, x_c, y_c,
 	    hypotf(x_c, y_c) / hypotf(img->w * 0.5, img->h * 0.5), RadOfDeg(atan2f(y_c, x_c)));
 
@@ -171,7 +156,6 @@ void color_object_detector_init(void)
     {
     memset(global_filters, 0, 2 * sizeof(struct color_object_t));
     pthread_mutex_init(&mutex, NULL);
-
 #ifdef COLOR_OBJECT_DETECTOR_CAMERA1
 #ifdef COLOR_OBJECT_DETECTOR_LUM_MIN1
     cod_lum_min1 = COLOR_OBJECT_DETECTOR_LUM_MIN1;
@@ -237,8 +221,6 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
 	{
 	for (uint16_t x = 0; x < img->w; x++)
 	    {
-
-
 	    // Check if the color is inside the specified values
 	    uint8_t *yp, *up, *vp;
 	    if (x % 2 == 0)
@@ -270,8 +252,6 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
 		}
 	    }
 	}
-
-
     if (cnt > 0)
 	{
 	*p_xc = (int32_t) roundf(tot_x / ((float) cnt) - img->w * 0.5f);
@@ -285,115 +265,6 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
     return cnt;
     }
 
-
-/*
- * find_object_grass
- *
- *
- * Also returns the amount of pixels that satisfy these filter bounds.
- *
- * @param img - input image to process formatted as YUV422.
- * @param p_xc - x coordinate of the centroid of color object
- * @param p_yc - y coordinate of the centroid of color object
- * @param lum_min - minimum y value for the filter in YCbCr colorspace
- * @param lum_max - maximum y value for the filter in YCbCr colorspace
- * @param cb_min - minimum cb value for the filter in YCbCr colorspace
- * @param cb_max - maximum cb value for the filter in YCbCr colorspace
- * @param cr_min - minimum cr value for the filter in YCbCr colorspace
- * @param cr_max - maximum cr value for the filter in YCbCr colorspace
- * @param draw - whether or not to draw on image
- * @return number of pixels of image within the filter bounds.
- */
-uint32_t find_object_grass(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
-	bool draw, uint8_t lum_min, uint8_t lum_max, uint8_t cb_min,
-	uint8_t cb_max, uint8_t cr_min, uint8_t cr_max)
-    {
-    uint32_t cnt_total = 0;
-    uint32_t cnt_left = 0;
-    uint32_t cnt_mid = 0;
-    uint32_t cnt_right = 0;
-    uint32_t tot_x = 0;
-    uint32_t tot_y = 0;
-    uint8_t *buffer = img->buf;
-
-    // Go through all the pixels
-    for (uint16_t y = 0; y < img->h; y++)
-	{
-	for (uint16_t x = 0; x < img->w; x++)
-	    {
-	    // Check if the color is inside the specified values
-	    uint8_t *yp, *up, *vp;
-	    if (x % 2 == 0)
-		{
-		// Even x
-		up = &buffer[y * 2 * img->w + 2 * x];      // U
-		yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-		vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-		//yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-		}
-	    else
-		{
-		// Uneven x
-		up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-		//yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-		vp = &buffer[y * 2 * img->w + 2 * x];      // V
-		yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-		}
-
-	    if ((*yp >= lum_min) && (*yp <= lum_max) && (*up >= cb_min) && (*up <= cb_max) && (*vp >= cr_min) && (*vp <= cr_max))
-		{
-		if (y < (img->h) / 3)
-		    {
-		    // Attribute pixel to left side of image
-		    cnt_left++;
-		    }
-		else if (y < (img->h) * 2 / 3)
-		    {
-		    // Attribute pixel to middle of image
-		    cnt_mid++;
-		    }
-		else
-		    {
-		    // Attribute pixel to right side of image
-		    cnt_right++;
-		    }
-		cnt_total++;
-		tot_x += x;
-		tot_y += y;
-		}
-	    }
-	}
-
-    // PRINT("Left: %d  Mid: %d Right: %d \n", cnt_left, cnt_mid, cnt_right);
-
-    // Decide where to turn (turn to the third of the image where the highest number of suitable pixels was found
-    if (cnt_left > cnt_mid)
-	{
-	if (cnt_left > cnt_right)
-	    {
-	    turn = -1;
-	    }
-	else
-	    {
-	    turn = 1;
-	    }
-	}
-    else
-	{
-	if (cnt_mid > cnt_right)
-	    {
-	    turn = 0;
-	    }
-	else
-	    {
-	    turn = 1;
-	    }
-	}
-
-    return cnt_total;
-    }
-
-
 void color_object_detector_periodic(void)
     {
     static struct color_object_t local_filters[2];
@@ -404,13 +275,15 @@ void color_object_detector_periodic(void)
     if (local_filters[0].updated)
 	{
 	AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID,
-		local_filters[0].x_c, local_filters[0].y_c, 0, 0, local_filters[0].color_count, turn);
+		local_filters[0].x_c, local_filters[0].y_c, 0, 0,
+		local_filters[0].color_count, 0);
 	local_filters[0].updated = false;
 	}
     if (local_filters[1].updated)
 	{
 	AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION2_ID,
-		local_filters[1].x_c, local_filters[1].y_c, 0, 0, local_filters[1].color_count, 1);
+		local_filters[1].x_c, local_filters[1].y_c, 0, 0,
+		local_filters[1].color_count, 1);
 	local_filters[1].updated = false;
 	}
     }
