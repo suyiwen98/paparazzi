@@ -53,5 +53,6 @@ if __name__ == '__main__':
     filenames.sort(key=lambda f: int(re.sub('\D', '', f)))
     #check if the filter works on the randomly selected image
     n=random.randint(0,len(filenames))
+    print(n)
     Filtered = filter_color(filenames[n], y_low = 50, y_high = 255, cb_low = 0, 
                              cb_high = 130, cr_low = 0, cr_high = 135, resize_factor=1)
