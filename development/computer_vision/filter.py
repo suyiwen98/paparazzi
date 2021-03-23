@@ -11,9 +11,9 @@ import calibration
 
 
 def filter_color(image_name, y_low, y_high, u_low, u_high, v_low, v_high, resize_factor):
-    im = calibration.undistort(image_name)
+    original = calibration.undistort(image_name)
     #blur the image to remove noise
-    im = cv2.blur(im, (10, 10))
+    im = cv2.blur(original, (10, 10))
     # cv2.resize(src, dsize[, dst[, fx[, fy[, interpolation]]]])
     # src: source, original or input image
     # dsize: desired size for the output image
@@ -34,7 +34,7 @@ def filter_color(image_name, y_low, y_high, u_low, u_high, v_low, v_high, resize
     
 
     plt.figure();
-    RGB = cv2.cvtColor(im, cv2.COLOR_BGR2RGB);
+    RGB = cv2.cvtColor(original, cv2.COLOR_BGR2RGB);
     plt.imshow(RGB);
     plt.title('Original image');
     
@@ -50,6 +50,6 @@ if __name__ == '__main__':
     image_dir_path = './AE4317_2019_datasets/cyberzoo_poles_panels_mats/20190121-142935/*.jpg'
     filenames = glob.glob(image_dir_path)
     filenames.sort(key=lambda f: int(re.sub('\D', '', f)))
-    for i in filenames[450:460]:
+    for i in filenames[0:10]:
         Filtered_pole = filter_color(i, y_low = 50, y_high = 255, u_low = 0, 
                                  u_high = 130, v_low = 0, v_high = 140, resize_factor=1)
