@@ -52,7 +52,7 @@ int16_t obstacle_free_confidence = 0; // a measure of how certain we are that th
 float moveDistance = 2;                 // waypoint displacement [m]
 uint8_t oob_heading_increment = 5; // heading angle increment if out of bounds [deg]
 const int16_t max_trajectory_confidence = 5; // number of consecutive negative object detections to be sure we are obstacle free
-uint8_t heading_increment = 10;
+uint8_t heading_increment = 10; // degrees to turn in case obstacle is detected
 int16_t turn_dir = 0;
 
 // needed to receive output from a separate module running on a parallel process
@@ -135,7 +135,7 @@ void mav_exercise_periodic(void)
 
 	turnTowardsGrass(); // call grass detector to change heading
 
-	navigation_state = TURN;
+	navigation_state = TURN; // change to turn state
 	break;
 
     case TURN:

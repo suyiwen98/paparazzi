@@ -36,8 +36,7 @@ extern float oag_floor_count_frac;  // floor detection threshold as a fraction o
 extern float oag_max_speed;         // max flight speed [m/s]
 extern float oag_heading_rate;      // heading rate setpoint [rad/s]
 
-extern uint8_t heading_increment;
-extern uint8_t oob_heading_increment;
+extern float oob_heading_rate;
 
 extern void mav_exercise_guided_init(void);
 extern void mav_exercise_guided_periodic(void);
