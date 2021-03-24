@@ -41,7 +41,8 @@ using namespace cv;
 
 Mat filter_color(Mat image, int y_low, int y_high, int u_low, int u_high, int v_low, int v_high) {
     Mat yuvImage;
-    cvtColor(image, yuvImage, CV_BGR2YUV);
+    cvtColor(image, yuvImage, CV_YUV2RGB_Y422);
+    cvtColor(yuvImage, yuvImage, CV_RGB2YUV);
 
     int nRows = yuvImage.rows;
     int nCols = yuvImage.cols;
@@ -58,26 +59,30 @@ Mat filter_color(Mat image, int y_low, int y_high, int u_low, int u_high, int v_
                 yuv[1] = 255;
                 yuv[2] = 255;
             } else {
-                yuv[0] = 255;
-                yuv[1] = 255;
-                yuv[2] = 255;
+                yuv[0] = 1;
+                yuv[1] = 1;
+                yuv[2] = 1;
             }
         }
     }
     return yuvImage;
 }
 
-char* opencv_optical_flow(char *img, int width, int height, char *img_prev, int width_prev, int height_prev) {
+void opencv_optical_flow(char *img, int width, int height, char *img_prev, int width_prev, int height_prev) {
     // Create a new image, using the original bebop image.
-    Mat M(height, width, CV_8UC3, img);
+    Mat M(height, width, CV_8UC2, img);
     Mat image;
-    cvtColor(M, image, CV_BGR2GRAY);
-    blur(image, image, Size(3, 3));
+    cvtColor(M, M, CV_YUV2RGB_Y422);
+    cvtColor(M, M, CV_RGB2GRAY);
+    blur(M, image, Size(3, 3));
 
-    Mat M_prev(height_prev, width_prev, CV_8UC3, img_prev);
+    Mat M_prev(height_prev, width_prev, CV_8UC2, img_prev);
     Mat image_prev;
-    cvtColor(M_prev, image_prev, CV_BGR2GRAY);
+    cvtColor(M_prev, image_prev, CV_YUV2RGB_Y422);
+    cvtColor(image_prev, image_prev, CV_RGB2GRAY);
     blur(image_prev, image_prev, Size(3, 3));
+
+    PRINT("TEST\n");
 
     int y_low = 50;
     int y_high = 250;
@@ -89,10 +94,21 @@ char* opencv_optical_flow(char *img, int width, int height, char *img_prev, int 
     Mat filtered = filter_color(M_prev, y_low, y_high, u_low, u_high, v_low, v_high);
 
     Mat reduced_noise;
+
+    PRINT("TEST2\n");
+
+    cvtColor(filtered, filtered, CV_YUV2RGB_Y422);
+
+    PRINT("TEST3\n");
+
+    cvtColor(filtered, filtered, CV_RGB2BGR);
+
+    PRINT("TEST4\n");
+
     fastNlMeansDenoisingColored(filtered, reduced_noise, 90, 10, 7, 21);
     threshold(reduced_noise, reduced_noise, 250, 255, THRESH_BINARY);
 
-    img = (char *)reduced_noise.data; // Try to write the changed image back to the input, but this doesn't actually work.
+    cvtColor(filtered, filtered, CV_BGR2GRAY);
 
-    return (char *) reduced_noise.data;
+    grayscale_opencv_to_yuv422(filtered, img, width, height);
 }

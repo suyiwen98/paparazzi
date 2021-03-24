@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-char* opencv_optical_flow(char *img, int width, int height, char *img_prev, int width_prev, int height_prev);
+void opencv_optical_flow(char *img, int width, int height, char *img_prev, int width_prev, int height_prev);
 
 //cv::Mat filter_color(cv::Mat image, int y_low, int y_high, int u_low, int u_high, int v_low, int v_high);
 

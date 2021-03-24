@@ -82,7 +82,7 @@ static void optical_flow_cb(uint8_t __attribute__((unused)) sender_id,
                             int16_t __attribute__((unused)) foe_y,
                             int16_t __attribute__((unused)) ttc,
                             int16_t __attribute__((unused)) divergence) {
-    PRINT("%d, %d, %d, %d, %d, %d", sender_id, error, foe_x, foe_y, ttc, divergence);
+    //PRINT("%d, %d, %d, %d, %d, %d", sender_id, error, foe_x, foe_y, ttc, divergence);
 }
 
 void mav_project_init(void) {
@@ -102,8 +102,8 @@ void mav_project_periodic(void) {
     // front_camera defined in airframe xml, with the video_capture module
     int32_t color_count_threshold = oa_color_count_frac * front_camera.output_size.w * front_camera.output_size.h;
 
-    PRINT("Color_count: %d  threshold: %d state: %d turn: %d\n", color_count, color_count_threshold, navigation_state,
-          turn_dir);
+//    PRINT("Color_count: %d  threshold: %d state: %d turn: %d\n", color_count, color_count_threshold, navigation_state,
+//          turn_dir);
 
     // update our safe confidence using color threshold
     if (turn_dir == 0) {

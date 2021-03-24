@@ -33,11 +33,11 @@ struct optical_flow_object_t global_filters[1];
 
 struct image_t *optical_flow(struct image_t *img);
 struct image_t *optical_flow(struct image_t *img) {
+    PRINT("Starting optical flow processing\n");
+    clock_t begin = clock();
     // Optical flow processing code goes here //
     //TODO: Actually send img_prev and not just the same image twice
-    char* result = opencv_optical_flow((char *) img->buf, img->w, img->h, (char *) img->buf, img->w, img->h);
-    PRINT("Got result %d\n", result);
-//    img->buf = result; // This line will crash the program
+    opencv_optical_flow((char *) img->buf, img->w, img->h, (char *) img->buf, img->w, img->h);
 
     // Set some dummy values for testing
     int32_t error = 1;
@@ -55,6 +55,10 @@ struct image_t *optical_flow(struct image_t *img) {
     global_filters[0].divergence = divergence;
     global_filters[0].updated = true;
     pthread_mutex_unlock(&mutex);
+
+    clock_t end = clock();
+    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    PRINT("Took %f seconds to run optical_flow video processing\n", time_spent);
     return img;
 }
 
@@ -69,6 +73,7 @@ void optical_flow_init(void) {
 }
 
 void optical_flow_periodic(void) {
+    PRINT("Starting optical_flow_periodic");
     static struct optical_flow_object_t local_filters[2];
     pthread_mutex_lock(&mutex);
     memcpy(local_filters, global_filters, sizeof(struct optical_flow_object_t));
@@ -83,4 +88,5 @@ void optical_flow_periodic(void) {
                                 local_filters[0].divergence);
         local_filters[0].updated = false;
     }
+    PRINT("FINISHED OPTICAL FLOW PERIODIC\n");
 }
