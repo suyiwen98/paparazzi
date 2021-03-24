@@ -5,11 +5,17 @@ import matplotlib.pyplot as plt
 # get numpy
 import numpy as np
 import glob
+import re
+import random
 import calibration
 
 
-def filter_color(image_name, y_low, y_high, u_low, u_high, v_low, v_high, resize_factor):
-    im = calibration.undistort(image_name)
+def filter_color(image_name, y_low, y_high, cb_low, cb_high, cr_low, cr_high, resize_factor):
+    """This creates a YCrCb based image filter and returns a binary image that shows
+    the pexels within the threshold in white and the other ones in black"""
+    original = calibration.undistort(image_name)
+    #blur the image to remove noise
+    im = cv2.blur(original, (10, 10))
     # cv2.resize(src, dsize[, dst[, fx[, fy[, interpolation]]]])
     # src: source, original or input image
     # dsize: desired size for the output image
@@ -17,30 +23,36 @@ def filter_color(image_name, y_low, y_high, u_low, u_high, v_low, v_high, resize
 
     im = cv2.resize(im, (int(im.shape[1] / resize_factor), int(im.shape[0] / resize_factor)))
     # convert an image from RBG space to YUV.
-    YUV = cv2.cvtColor(im, cv2.COLOR_BGR2YUV)
-    Filtered = np.zeros([YUV.shape[0], YUV.shape[1]])
-    for y in range(YUV.shape[0]):
-        for x in range(YUV.shape[1]):
-            if (y_low <= YUV[y, x, 0] <= y_high and
-                    u_low <= YUV[y, x, 1] <= u_high and
-                    v_low <= YUV[y, x, 2] <= v_high):
+    YCrCb = cv2.cvtColor(im, cv2.COLOR_BGR2YCrCb)
+    Filtered = np.zeros([YCrCb.shape[0], YCrCb.shape[1]])
+    for y in range(YCrCb.shape[0]):
+        for x in range(YCrCb.shape[1]):
+            if (y_low <= YCrCb[y, x, 0] <= y_high and
+                    cb_low <= YCrCb[y, x, 1] <= cb_high and
+                    cr_low <= YCrCb[y, x, 2] <= cr_high):
                 Filtered[y, x] = 1
+    
+    ret, Filtered = cv2.threshold(Filtered, 0, 255, cv2.THRESH_BINARY)
+    
+    plt.figure();
+    RGB = cv2.cvtColor(original, cv2.COLOR_BGR2RGB);
+    plt.imshow(RGB);
+    plt.title('Original image');
+    
+    plt.figure()
+    plt.imshow(Filtered);
+    plt.title('Filtered image');
+    plt.show()
 
-    #    plt.figure();
-    #    RGB = cv2.cvtColor(im, cv2.COLOR_BGR2RGB);
-    #    plt.imshow(RGB);
-    #    plt.title('Original image');
-    #
-    #    plt.figure()
-    #    plt.imshow(Filtered);
-    #    plt.title('Filtered image');
-    #    plt.show()
     return Filtered
 
 
 if __name__ == '__main__':
-    image_dir_path = './AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
+    image_dir_path = './AE4317_2019_datasets/cyberzoo_poles_panels_mats/20190121-142935/*.jpg'
     filenames = glob.glob(image_dir_path)
-    filenames.sort()
-    Filtered_pole = filter_color(filenames[0], y_low=50, y_high=200,
-                                 u_low=0, u_high=120, v_low=160, v_high=220, resize_factor=4)
+    filenames.sort(key=lambda f: int(re.sub('\D', '', f)))
+    #check if the filter works on the randomly selected image
+    n=random.randint(0,len(filenames))
+    print(n)
+    Filtered = filter_color(filenames[n], y_low = 50, y_high = 255, cb_low = 0, 
+                             cb_high = 130, cr_low = 0, cr_high = 135, resize_factor=1)
