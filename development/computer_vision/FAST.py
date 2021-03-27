@@ -144,14 +144,13 @@ def extract_features(img, gray, boundRect):
     #        for i in range(len(pts)):
     #            cv2.circle(img, tuple(pts[i]), radius=5, color=(255,0,0), thickness=-1)
 
-    fast = cv2.FastFeatureDetector_create(threshold=1)
+    fast = cv2.FastFeatureDetector_create(threshold=10)
 
     # create a mask of white poles and black background
     mask = [[0] * gray.shape[1]] * gray.shape[0]
     mask = np.asarray(mask)
     mask = mask.astype(np.uint8)
     (x, y, w, h) = boundRect
-    print(x, y, w, h)
     if gray.shape[1] > x + w + 10 and gray.shape[0] > y + h + 15:
 
         if x - 10 > 0 and y - 15 > 0:
@@ -165,21 +164,20 @@ def extract_features(img, gray, boundRect):
 
     plt.figure()
     plt.imshow(mask)
-    plt.title('Mask ' + str(start))
+    plt.title('Mask ')
 
     # find the keypoints
     kp = fast.detect(gray, mask=mask)
-
+    kp = fast.detect(gray)
     # convert the keypoints to array
     pts = cv2.KeyPoint_convert(kp)
     pts = pts.reshape((pts.shape[0], 1, 2))
 
-    print(pts)
     # draw the keypoints on original callibrated image
-    img_pt = cv2.drawKeypoints(img, kp, None, color=(255, 0, 0))
+    img_pt = cv2.drawKeypoints(img, kp, None, color=(0, 0, 255))
     plt.figure()
     plt.imshow(cv2.cvtColor(img_pt, cv2.COLOR_BGR2RGB))
-    plt.title('Detected features of image')
+    plt.title('Detected features on orange pole')
 
     return pts
 
@@ -223,8 +221,7 @@ if __name__ == '__main__':
 
         # FAST feature detection
         points_old = extract_features(img, gray, boundRect)
-        print(points_old)
-
+        
         df = pd.read_csv(r'./AE4317_2019_datasets/cyberzoo_poles_panels_mats/20190121-142943.csv')
 
         # Show Results
