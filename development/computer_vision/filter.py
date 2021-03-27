@@ -1,15 +1,18 @@
-# get opencv library
+#import libraries
 import cv2
-# get matplotlib for plotting graphs
 import matplotlib.pyplot as plt
-# get numpy
 import numpy as np
 import glob
 import re
-import random
+#import the calibration python script
 import calibration
 
 def get_YCbCr():
+    """This gets the average Y, Cr, Cb values of the green grass part from the 
+    first image
+    Output:
+        Y, Cr, Cb: Average Y, Cr, Cb integer values"""
+    
     im=calibration.undistort(filenames[0])
     # convert an image from RBG space to YCbCr.
     YCrCb = cv2.cvtColor(im, cv2.COLOR_BGR2YCrCb)
