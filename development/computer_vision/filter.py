@@ -26,21 +26,48 @@ def filter_color(image_name, y_low, y_high, u_low, u_high, v_low, v_high, resize
                     v_low <= YUV[y, x, 2] <= v_high):
                 Filtered[y, x] = 1
 
-    #    plt.figure();
-    #    RGB = cv2.cvtColor(im, cv2.COLOR_BGR2RGB);
-    #    plt.imshow(RGB);
-    #    plt.title('Original image');
-    #
-    #    plt.figure()
-    #    plt.imshow(Filtered);
-    #    plt.title('Filtered image');
-    #    plt.show()
+    plt.figure();
+    RGB = cv2.cvtColor(im, cv2.COLOR_BGR2RGB);
+    plt.imshow(RGB);
+    plt.title('Original image');
+    
+    plt.figure()
+    plt.imshow(Filtered);
+    plt.title('Filtered image');
+    plt.show()
     return Filtered
 
+def get_YCbCr(img):
+    """This gets the average Y, Cr, Cb values of the green grass part from the 
+    first image
+    Output:
+        Y, Cr, Cb: Average Y, Cr, Cb integer values"""
+    
+    im=calibration.undistort(img)
+    # convert an image from RBG space to YCbCr.
+    YCrCb = cv2.cvtColor(im, cv2.COLOR_BGR2YCrCb)
+    
+    #get average Y value from the green part
+    Y=int(np.average(YCrCb[:,:,0]))
+    Y_std = int(np.std(YCrCb[:,:,0]))
+    #get average Cb value
+    Cr=int(np.average(YCrCb[:,:,1]))
+    Cr_std = int(np.std(YCrCb[:,:,1]))
+    #get average Cr value
+    Cb=int(np.average(YCrCb[:,:,2]))
+    Cb_std = int(np.std(YCrCb[:,:,2]))
+    
+    print([Y,Cr,Cb],[2*Y_std, 2*Cr_std, 2*Cb_std])
+    return Y, Cr, Cb
 
 if __name__ == '__main__':
-    image_dir_path = './AE4317_2019_datasets/cyberzoo_poles/20190121-135009/*.jpg'
+    image_dir_path = '/home/agrim/Downloads/dataset/*.jpeg'
+    #get_YCbCr(image_dir_path)
     filenames = glob.glob(image_dir_path)
     filenames.sort()
-    Filtered_pole = filter_color(filenames[0], y_low=50, y_high=200,
-                                 u_low=0, u_high=120, v_low=160, v_high=220, resize_factor=4)
+    ''' img = filenames[6]
+    Filtered_pole = filter_color(img, y_low=90, y_high=130,u_low=80, u_high=110, v_low=120, v_high=145, resize_factor=4)
+    '''
+    for img in filenames:
+        Filtered_pole = filter_color(img, y_low=60, y_high=140,u_low=75, u_high=110, v_low=120, v_high=145, resize_factor=4)
+        input()

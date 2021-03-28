@@ -56,13 +56,13 @@ enum navigation_state_t
     };
 
 // define settings
-float oag_color_count_frac = 0.18f; // obstacle detection threshold as a fraction of total of image
+float oag_color_count_frac = 0.1f; // obstacle detection threshold as a fraction of total of image
 float oag_floor_count_frac = 0.05f; // floor detection threshold as a fraction of total of image
 float oag_max_speed = 0.8f;               // max flight speed [m/s]
-float oag_heading_rate = RadOfDeg(35.f); // heading change setpoint for avoidance [rad/s]
+float oag_heading_rate = RadOfDeg(10.f); // heading change setpoint for avoidance [rad/s]
 float avoidance_heading_direction = 0;  // heading change direction for avoidance [-]
 
-float oob_heading_rate = RadOfDeg(25.f);
+float oob_heading_rate = RadOfDeg(10.f);
 
 
 // define and initialise global variables
@@ -152,6 +152,7 @@ void mav_exercise_guided_periodic(void)
     float floor_centroid_frac = floor_centroid
 	    / (float) front_camera.output_size.h / 2.f;
 
+    VERBOSE_PRINT("Grass detector: Grass pixels: %d", color_count_threshold);
     VERBOSE_PRINT("Grass detector: Direction %d, Confidence: %d \n", turn_dir, obstacle_free_confidence);
     VERBOSE_PRINT("Floor detector: Count %d, Threshold %d, Centroid %f\n", floor_count, floor_count_threshold, floor_centroid_frac);
     VERBOSE_PRINT("Navigation state: %d \n", turn_dir, navigation_state);
@@ -164,7 +165,7 @@ void mav_exercise_guided_periodic(void)
     }
     else
     {
-       obstacle_free_confidence -= 1;  // might need adjustment
+       obstacle_free_confidence -= 2;  // might need adjustment
     }
 
     // bound obstacle_free_confidence
