@@ -79,6 +79,15 @@ def filter_color(image_name, y_low, y_high, cr_low, cr_high, cb_low, cb_high, re
 
     return Filtered
 
+def grid_3(img):
+    y = img.shape[0]
+    x = img.shape[1]
+    # cv2.line(image, start_point, end_point, color, thickness )
+#    img = cv2.line(img, (0, y // 3), (x, y // 3), (255, 255, 255), 1, 1)
+#    img = cv2.line(img, (0, 2 * y // 3), (x, 2 * y // 3), (255, 255, 255), 1, 1)
+    img = cv2.line(img, (x // 3, 0), (x // 3, y), (255, 255, 255), 1, 1)
+    img = cv2.line(img, (2 * x // 3, 0), (2 * x // 3, y), (255, 255, 255), 1, 1)
+    return img
 
 if __name__ == '__main__':
     #specify image folder
@@ -94,5 +103,10 @@ if __name__ == '__main__':
     Cb_range = 20
     #check if the filter works on the randomly images
     for i in range(len(filenames)): 
+        Filtered = filter_color(filenames[i], y_low = 50, y_high = 255, cr_low = 0, 
+                             cr_high = 130, cb_low = 0, cb_high = 135, resize_factor=1)
         Filtered = filter_color(filenames[i], y_low = Y-Y_range, y_high = Y+Y_range, cr_low = 0, 
                              cr_high = Cr+Cr_range, cb_low = 0, cb_high = Cb+Cb_range, resize_factor=1)
+        Filtered = filter_color(filenames[i], y_low = 90, y_high = 140, cr_low = 80, 
+                             cr_high = 110, cb_low = 120, cb_high = Cb+Cb_range, resize_factor=145)
+    print(Y-Y_range, Y+Y_range,Cr+Cr_range,Cb+Cb_range)
