@@ -25,7 +25,11 @@
  * if you are over the defined object or not
  */
 
-// Own header
+/**
+ * Modified by Marko Reinhard, Agrim Sharma
+ * First filter mode decides where to turn by counting the green pixels in three image segments and publishes this via ABI.
+ * Second filter mode remains unchanged and is used for boundary detection via bottom camera. 
+ */
 #include "modules/computer_vision/cv_detect_color_object.h"
 #include "modules/computer_vision/cv.h"
 #include "subsystems/abi.h"
@@ -289,7 +293,7 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
 /*
  * find_object_grass
  *
- *
+ * Used to determine turning direction of MAV.
  * Also returns the amount of pixels that satisfy these filter bounds.
  *
  * @param img - input image to process formatted as YUV422.
@@ -403,6 +407,7 @@ void color_object_detector_periodic(void)
 
     if (local_filters[0].updated)
 	{
+	// publish turning information via ABI
 	AbiSendMsgVISUAL_DETECTION(COLOR_OBJECT_DETECTION1_ID,
 		local_filters[0].x_c, local_filters[0].y_c, 0, 0, local_filters[0].color_count, turn);
 	local_filters[0].updated = false;

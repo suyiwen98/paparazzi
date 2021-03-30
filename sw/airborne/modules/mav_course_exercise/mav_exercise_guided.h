@@ -6,24 +6,17 @@
  */
 /**
  * @file "modules/mav_course_exercise/mav_exercise_guided.h"
- * @author Kirk Scheper
- * This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
+ * @author Marko Reinhard, Agrim Sharma
+ * This module is the contribution of Group 1 for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
  * This module is used in combination with a color filter (cv_detect_color_object) and the guided mode of the autopilot.
- * The avoidance strategy is to simply count the total number of orange pixels. When above a certain percentage threshold,
- * (given by color_count_frac) we assume that there is an obstacle and we turn.
+
  *
- * The color filter settings are set using the cv_detect_color_object. This module can run multiple filters simultaneously
- * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
- * This module differs from the simpler orange_avoider.xml in that this is flown in guided mode. This flight mode is
- * less dependent on a global positioning estimate as witht the navigation mode. This module can be used with a simple
- * speed estimate rather than a global position.
- *
- * Here we also need to use our onboard sensors to stay inside of the cyberzoo and not collide with the nets. For this
- * we employ a simple color detector, similar to the orange poles but for green to detect the floor. When the total amount
- * of green drops below a given threshold (given by floor_count_frac) we assume we are near the edge of the zoo and turn
- * around. The color detection is done by the cv_detect_color_object module, use the FLOOR_VISUAL_DETECTION_ID setting to
- * define which filter to use.
+ * The color filter settings are set using the cv_detect_color_object. This filter has been modified.
+ * One filter is used to detect the boundaries of the Cyberzoo using the bottom camera, and the other filter is used to count the green pixels in three different image segments.
+ * If the middle image segment has the highest number of green pixels, the direction is kept. Otherwise, the MAV turns towards the side with the higher green pixel count.
+ * Please be aware that the filter file in the computer vision module has been modified to fit the needs. The decision if the drone turns is made there, and published via an ABI message.
  */
+
 
 #ifndef PAPARAZZI_MAV_EXERCISE_GUIDED_H
 #define PAPARAZZI_MAV_EXERCISE_GUIDED_H
@@ -34,9 +27,9 @@
 extern float oag_color_count_frac;  // obstacle detection threshold as a fraction of total of image
 extern float oag_floor_count_frac;  // floor detection threshold as a fraction of total of image
 extern float oag_max_speed;         // max flight speed [m/s]
-extern float oag_heading_rate;      // heading rate setpoint [rad/s]
+extern float oag_heading_rate;      // heading change in case obstacle is detected [rad/s]
 
-extern float oob_heading_rate;
+extern float oob_heading_rate; 	    // heading change rate in case drone is out of Cyberzoo boundaries [rad/s]
 
 extern void mav_exercise_guided_init(void);
 extern void mav_exercise_guided_periodic(void);
