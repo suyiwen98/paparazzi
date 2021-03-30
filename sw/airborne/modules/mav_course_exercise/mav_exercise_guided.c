@@ -6,24 +6,15 @@
  */
 /**
  * @file "modules/mav_course_exercise/mav_exercise_guided.c"
- * @author Kirk Scheper
- * This module is an example module for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
+ * @author Marko Reinhard, Agrim Sharma
+ * This module is the contribution of Group 1 for the course AE4317 Autonomous Flight of Micro Air Vehicles at the TU Delft.
  * This module is used in combination with a color filter (cv_detect_color_object) and the guided mode of the autopilot.
- * The avoidance strategy is to simply count the total number of 
- pixels. When above a certain percentage threshold,
- * (given by color_count_frac) we assume that there is an obstacle and we turn.
+
  *
- * The color filter settings are set using the cv_detect_color_object. This module can run multiple filters simultaneously
- * so you have to define which filter to use with the ORANGE_AVOIDER_VISUAL_DETECTION_ID setting.
- * This module differs from the simpler orange_avoider.xml in that this is flown in guided mode. This flight mode is
- * less dependent on a global positioning estimate as witht the navigation mode. This module can be used with a simple
- * speed estimate rather than a global position.
- *
- * Here we also need to use our onboard sensors to stay inside of the cyberzoo and not collide with the nets. For this
- * we employ a simple color detector, similar to the orange poles but for green to detect the floor. When the total amount
- * of green drops below a given threshold (given by floor_count_frac) we assume we are near the edge of the zoo and turn
- * around. The color detection is done by the cv_detect_color_object module, use the FLOOR_VISUAL_DETECTION_ID setting to
- * define which filter to use.
+ * The color filter settings are set using the cv_detect_color_object. This filter has been modified.
+ * One filter is used to detect the boundaries of the Cyberzoo using the bottom camera, and the other filter is used to count the green pixels in three different image segments.
+ * If the middle image segment has the highest number of green pixels, the direction is kept. Otherwise, the MAV turns towards the side with the higher green pixel count.
+ * Please be aware that the filter file in the computer vision module has been modified to fit the needs. The decision if the drone turns is made there, and published via an ABI message.
  */
 
 #include "mav_exercise_guided.h"
@@ -58,11 +49,11 @@ enum navigation_state_t
 // define settings
 float oag_color_count_frac = 0.1f; // obstacle detection threshold as a fraction of total of image
 float oag_floor_count_frac = 0.05f; // floor detection threshold as a fraction of total of image
-float oag_max_speed = 0.8f;               // max flight speed [m/s]
-float oag_heading_rate = RadOfDeg(10.f); // heading change setpoint for avoidance [rad/s]
-float avoidance_heading_direction = 0;  // heading change direction for avoidance [-]
-
-float oob_heading_rate = RadOfDeg(10.f);
+float oag_max_speed = 0.5f;               // max flight speed [m/s]
+float oag_heading_rate = RadOfDeg(10.f); // heading change in case obstacle is detected [rad/s]
+float avoidance_heading_direction = 1;  // heading change direction for avoidance [-], initialize with 1
+float oob_heading_direction = 1;  // heading change direction for out of boundaries [-], initialize with 1
+float oob_heading_rate = RadOfDeg(10.f); // heading change rate in case drone is out of Cyberzoo boundaries [rad/s]
 
 
 // define and initialise global variables
@@ -76,12 +67,9 @@ const int16_t max_trajectory_confidence = 5; // number of consecutive negative o
 int16_t turn_dir = 0; // stores turn direction from grass detector filter output
 
 
-// global variables which can be controlled by settings
-uint8_t oob_heading_direction = 0;
-
 // First filter in cv_detect_color_object.c is used for grass detection for heading, second filter is used for grass detection to stay in boundaries
 
-// This call back will be used to receive the color count from the orange detector
+// This call back will be used to receive the turn command from the green pixel counter
 #ifndef GRASS_DETECTOR_VISUAL_DETECTION_ID
 #error This module requires two color filters, as such you have to define GRASS_DETECTOR_VISUAL_DETECTION_ID to the orange filter
 #error Please define GRASS_DETECTOR_VISUAL_DETECTION_ID to be COLOR_OBJECT_DETECTION1_ID or COLOR_OBJECT_DETECTION2_ID in your airframe
@@ -155,7 +143,7 @@ void mav_exercise_guided_periodic(void)
     VERBOSE_PRINT("Grass detector: Grass pixels: %d", color_count_threshold);
     VERBOSE_PRINT("Grass detector: Direction %d, Confidence: %d \n", turn_dir, obstacle_free_confidence);
     VERBOSE_PRINT("Floor detector: Count %d, Threshold %d, Centroid %f\n", floor_count, floor_count_threshold, floor_centroid_frac);
-    VERBOSE_PRINT("Navigation state: %d \n", turn_dir, navigation_state);
+    VERBOSE_PRINT("Navigation state: %d \n", navigation_state);
 
 
     // update our safe confidence using the turn direction (if highest grass count still in center of image, turn direction would be 0)
@@ -215,18 +203,18 @@ void mav_exercise_guided_periodic(void)
 	// stop
 	guidance_h_set_guided_body_vel(0, 0);
 
-	// be careful with edge case that this gives zero?
-	turnTowardsGrass();
+	// Get random turn direction
+	chooseRandomIncrementAvoidance();
 
 	// start turn back into arena
-	guidance_h_set_guided_heading_rate(avoidance_heading_direction * oob_heading_rate);
+	guidance_h_set_guided_heading_rate(oob_heading_direction * oob_heading_rate);
 
 	navigation_state = REENTER_ARENA;
 
 	break;
     case REENTER_ARENA:
 	// force floor center to opposite side of turn to head back into arena
-	if (floor_count >= floor_count_threshold && avoidance_heading_direction * floor_centroid_frac >= 0.f)
+	if (floor_count >= floor_count_threshold && oob_heading_direction * floor_centroid_frac >= 0.f)
 	    {
 	    // return to heading mode
 	    guidance_h_set_guided_heading(stateGetNedToBodyEulers_f()->psi);
@@ -252,13 +240,11 @@ void chooseRandomIncrementAvoidance(void)
     // Randomly choose CW or CCW avoiding direction
     if (rand() % 2 == 0)
 	{
-	avoidance_heading_direction = 1.f;
-	VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+	oob_heading_direction = 1.f;
 	}
     else
 	{
-	avoidance_heading_direction = -1.f;
-	VERBOSE_PRINT("Set avoidance increment to: %f\n", avoidance_heading_direction * oag_heading_rate);
+	oob_heading_direction = -1.f;
 	}
     return false;
     }
