@@ -27,6 +27,18 @@ def get_YCbCr():
     print(Y,Cr,Cb)
     return Y, Cr, Cb
     
+
+def grid_3(img):
+    """Divide the image into 3 columns"""
+    y = img.shape[0]
+    x = img.shape[1]
+    # cv2.line(image, start_point, end_point, color, thickness )
+#    img = cv2.line(img, (0, y // 3), (x, y // 3), (255, 255, 255), 1, 1)
+#    img = cv2.line(img, (0, 2 * y // 3), (x, 2 * y // 3), (255, 255, 255), 1, 1)
+    img = cv2.line(img, (x // 3, 0), (x // 3, y), (255, 0, 0), 3)
+    img = cv2.line(img, (2 * x // 3, 0), (2 * x // 3, y), (255, 0, 0), 3)
+    return img
+
 def filter_color(image_name, y_low, y_high, cr_low, cr_high, cb_low, cb_high, resize_factor):
     """This creates a YCrCb based image filter and returns a binary image that shows
     the pexels within the threshold in white and the other ones in black
@@ -62,33 +74,56 @@ def filter_color(image_name, y_low, y_high, cr_low, cr_high, cb_low, cb_high, re
                     cr_low <= YCrCb[y, x, 1] <= cr_high and
                     cb_low <= YCrCb[y, x, 2] <= cb_high):
                 Filtered[y, x] = 1
-    
+                
     #make the filtered image binary
     ret, Filtered = cv2.threshold(Filtered, 0, 255, cv2.THRESH_BINARY)
     
     #to compare original image and filtered image
     plt.figure();
     RGB = cv2.cvtColor(original, cv2.COLOR_BGR2RGB);
+    grid_3(RGB)
+    countpixels(Filtered,RGB)
     plt.imshow(RGB);
-    plt.title('Original image');
+    plt.title('Navigation Result Using '+values);
     
     plt.figure()
     plt.imshow(Filtered);
-    plt.title('Filtered image with '+values);
+    plt.title('Filtered Image Using '+values);
     plt.show()
 
     return Filtered
 
-def grid_3(img):
-    y = img.shape[0]
-    x = img.shape[1]
-    # cv2.line(image, start_point, end_point, color, thickness )
-#    img = cv2.line(img, (0, y // 3), (x, y // 3), (255, 255, 255), 1, 1)
-#    img = cv2.line(img, (0, 2 * y // 3), (x, 2 * y // 3), (255, 255, 255), 1, 1)
-    img = cv2.line(img, (x // 3, 0), (x // 3, y), (255, 255, 255), 1, 1)
-    img = cv2.line(img, (2 * x // 3, 0), (2 * x // 3, y), (255, 255, 255), 1, 1)
-    return img
-
+def countpixels(Filtered,RGB):
+        y= Filtered.shape[0]
+        x = Filtered.shape[1]
+        
+        x1=x//3
+        x2=2 * x// 3
+        
+        x1_img = np.array(Filtered[:,0:x1])
+        x1_cnt = np.sum(np.array(x1_img) >= 255)
+        
+        x2_img = np.array(Filtered[:,x1:x2])
+        x2_cnt = np.sum(np.array(x2_img) >= 255)
+        
+        x3_img = np.array(Filtered[:, x2:x])
+        x3_cnt = np.sum(np.array(x3_img) >= 255)
+        
+        cnt= np.array([x1_cnt,x2_cnt,x3_cnt])
+        idx=np.argmax(cnt)
+        start_point=(x//2,y)
+        xdiff=x//6
+        if idx==0:
+            end_point=(x1//2,y//2)
+        elif idx==1:
+            end_point=(x1+xdiff,y//2)
+        elif idx==2:
+            end_point=(x2+xdiff,y//2)
+            
+        RGB=cv2.arrowedLine(RGB, start_point, end_point,(255,255,255), 3) 
+        print(x1_cnt,x2_cnt,x3_cnt)
+        return RGB
+    
 if __name__ == '__main__':
     #specify image folder
     image_dir_path = './Test_samples/real_test/*.jpg'
@@ -104,16 +139,18 @@ if __name__ == '__main__':
     #check if the filter works on the randomly images
     for i in range(len(filenames)): 
         #original values
-        values="original values"
+        values="Original Values"
         Filtered = filter_color(filenames[i], y_low = 50, y_high = 255, cr_low = 0, 
                              cr_high = 130, cb_low = 0, cb_high = 135, resize_factor=1)
+        
         #my values
-        values="improved values"
+        values="Improved Values"
         Filtered = filter_color(filenames[i], y_low = Y-Y_range, y_high = Y+Y_range, cr_low = 0, 
                              cr_high = Cr+Cr_range, cb_low = 0, cb_high = Cb+Cb_range, resize_factor=1)
+        
         #agrim's values
-        values="Agrim's values"
-        Filtered = filter_color(filenames[i], y_low = 90, y_high = 140, cr_low = 80, 
-                             cr_high = 110, cb_low = 120, cb_high = Cb+Cb_range, resize_factor=145)
+        #values="Agrim's values"
+        #Filtered = filter_color(filenames[i], y_low = 90, y_high = 140, cr_low = 80, 
+                             #cr_high = 110, cb_low = 120, cb_high = Cb+Cb_range, resize_factor=145)
     
     print(Y-Y_range, Y+Y_range,Cr+Cr_range,Cb+Cb_range)
